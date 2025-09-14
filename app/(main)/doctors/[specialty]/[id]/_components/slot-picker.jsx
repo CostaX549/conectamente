@@ -67,7 +67,9 @@
               ) : (
                 <div className="space-y-3">
                   <h3 className="text-lg font-medium text-white mb-2">
-                    {format(new Date(day.date), "EEEE, dd 'de' MMMM", { locale: ptBR })}
+                   <h3 className="text-lg font-medium text-white mb-2">
+  {format(parseISO(day.date), "EEEE, dd 'de' MMMM", { locale: ptBR })}
+</h3>
                   </h3>
                   <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2">
                     {day.slots.map((slot) => (
