@@ -10,7 +10,7 @@
 
   export function SlotPicker({ days, onSelectSlot }) {
     const [selectedSlot, setSelectedSlot] = useState(null);
-
+console.log("DAYS recebidos no SlotPicker:", JSON.stringify(days, null, 2));
     // Encontrar o primeiro dia com slots como tab padrão
     const firstDayWithSlots =
       days.find((day) => day.slots.length > 0)?.date || days[0]?.date;
