@@ -1,0 +1,41 @@
+import { getCurrentUser } from '@/actions/onboarding';
+import { redirect } from 'next/navigation';
+import React from 'react'
+export const metadata = {
+  title: "Integração - ConectaMente",
+  description: "Complete seu perfil para começar a usar o ConectaMente"
+}
+const OnboardingLayout = async  ({ children }) => {
+  const user = await getCurrentUser();
+
+  // Redirect users who have already completed onboarding
+  if (user) {
+    if (user.role === "PATIENT") {
+      redirect("/doctors");
+    } else if (user.role === "DOCTOR") {
+      // Check verification status for doctors
+      if (user.verificationStatus === "VERIFIED") {
+        redirect("/doctor");
+      } else {
+        redirect("/doctor/verification");
+      }
+    } else if (user.role === "ADMIN") {
+      redirect("/admin");
+    }
+  }
+  return (
+   
+    <div className="container mx-auto px-4 py-12">
+       <div className="max-w-3xl mx-auto">
+        <div className="text-center mb-10">
+        <h1 className=" text-3xl md:text-4xl  mb-2 gradient-title">Bem-vindo ao ConectaMente</h1>
+        <p className="text-muted-foreground text-lg">Conte-nos como você deseja usar a plataforma</p>
+       </div>
+     
+    {children}
+       </div>
+      </div>
+  )
+}
+
+export default OnboardingLayout
