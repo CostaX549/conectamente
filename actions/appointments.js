@@ -312,6 +312,7 @@ export async function getAvailableTimeSlots(doctorId) {
 
     // Get the next 4 days
     const now = new Date();
+    console.log(now)
     const days = [now, addDays(now, 1), addDays(now, 2), addDays(now, 3)];
 
     // Fetch existing appointments for the doctor over the next 4 days
