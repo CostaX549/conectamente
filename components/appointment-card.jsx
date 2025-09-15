@@ -372,7 +372,7 @@ export function AppointmentCard({
                   {userRole === "DOCTOR" ? "Descrição do Paciente" : "Sua Descrição"}
                 </h4>
                 <div className="p-3 rounded-md bg-muted/20 border border-emerald-900/20">
-                  <p className="text-white whitespace-pre-line">
+                  <p className="text-white truncate whitespace-pre-line">
                     {appointment.patientDescription}
                   </p>
                 </div>
@@ -472,7 +472,7 @@ export function AppointmentCard({
               ) : (
                 <div className="p-3 rounded-md bg-muted/20 border border-emerald-900/20 min-h-[80px]">
                   {appointment.notes ? (
-                    <p className="text-white whitespace-pre-line">
+                    <p className="text-white truncate whitespace-pre-line">
                       {appointment.notes}
                     </p>
                   ) : (
