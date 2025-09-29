@@ -143,46 +143,36 @@ export default function Home() {
           </div>
         </div>
       </section>
-      <section className="py-20">
-        <div className="container mx-auto px-4">
-         
-      
-  
-                <Card  className="bg-gradient-to-r from-emerald-900/30 to-emerald-950/20 border-emerald-800/20">
-                  
-                  <CardContent className="p-8 md:p-12 lg:p-16 relative overflow-hidden">
-                       <div>
-                        <h2 className="text-3xl md:text-4xl font-bold text-white mb-6">
-                          Pronto para assumir o controle da sua saúde?
-                        </h2>
-                        <p className="text-lg text-muted-foreground mb-8">
-                          Junte-se a milhares de usuários que simplificaram sua jornada de saúde com nossa plataforma. Comece hoje e experimente a saúde do jeito que deveria ser.
-                        </p>
-                        <div className="flex flex-col sm:flex-row gap-4">
-                          <Button
-                          size="lg"
-                          className="bg-emerald-600 text-white hover:bg-emerald-700"
-                           asChild
-                           >
-                            <Link href="/sign-up">Cadastre-se agora</Link>
-                          </Button>
-                            <Button
-                            variant="outline"
-                          size="lg"
-                          className="border-emerald-700/30 hover:bg-muted/80"
-                           asChild
-                           >
-                            <Link href="/pricing">Ver preços</Link>
-                          </Button>
-                        </div>
-                       </div>
-                  </CardContent>
-
-                </Card>
-             
-      
+     <section className="py-20">
+  <div className="container mx-auto px-4">
+    <Card className="bg-gradient-to-r from-emerald-900/30 to-emerald-950/20 border-emerald-800/20">
+      <CardContent className="p-8 md:p-12 lg:p-16 relative overflow-hidden">
+        <div className="text-center">
+          <h2 className="text-3xl md:text-4xl font-bold text-white mb-6">
+            Precisa de ajuda?
+          </h2>
+          <p className="text-lg text-muted-foreground mb-8">
+            Nossa equipe está pronta para responder suas dúvidas e oferecer suporte personalizado.
+          </p>
+          <Button
+            size="lg"
+            className="bg-emerald-600 text-white hover:bg-emerald-700"
+            asChild
+          >
+          <Link 
+              href="https://wa.me/5512991789979" 
+              target="_blank" 
+              rel="noopener noreferrer"
+            >
+              Fale Conosco
+            </Link>
+          </Button>
         </div>
-      </section>
+      </CardContent>
+    </Card>
+  </div>
+</section>
+
     </div>
 
   );
