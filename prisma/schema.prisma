@@ -40,6 +40,9 @@ model User {
   availabilities      Availability[]
   transactions        CreditTransaction[]
   payouts             Payout[]
+  patientChats Chat[] @relation("PatientChats")
+  doctorChats  Chat[] @relation("DoctorChats")
+  sentMessages Message[] @relation("SentMessages")
 
 }
 
@@ -141,4 +144,38 @@ model Payout {
 enum PayoutStatus {
   PROCESSING
   PROCESSED
+}
+
+model Chat {
+  id        String   @id @default(uuid())
+  patientId String
+  patient   User     @relation("PatientChats", fields: [patientId], references: [id])
+  doctorId  String
+  doctor    User     @relation("DoctorChats", fields: [doctorId], references: [id])
+
+  isActive  Boolean  @default(false) // só libera se houver agendamento válido
+
+  messages  Message[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([patientId, doctorId]) // garante um único chat por par
+}
+
+model Message {
+  id        String   @id @default(uuid())
+  chatId    String
+  chat      Chat     @relation(fields: [chatId], references: [id], onDelete: Cascade)
+
+  senderId  String
+ sender User @relation("SentMessages", fields: [senderId], references: [id])
+
+
+  content   String?  @db.Text
+  fileUrl   String?  // anexo opcional
+
+  createdAt DateTime @default(now())
+
+  @@index([chatId, createdAt])
 }

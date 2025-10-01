@@ -2,6 +2,7 @@
 const nextConfig = {
   experimental: {
     serverComponentsHmrCache: false, // defaults to true
+   
   },
   images: {
     remotePatterns: [

@@ -67,13 +67,17 @@ export function AppointmentCard({
     data: completeData,
   } = useFetch(markAppointmentCompleted);
 
-  const formatDateTime = (dateString) => {
+ const formatDateTime = (dateString) => {
   try {
-    return format(new Date(dateString), "d 'de' MMMM yyyy 'às' HH:mm", {
-      locale: ptBR, // <- aqui definimos o português
+    // define o fuso horário fixo
+    const timeZone = 'America/Sao_Paulo';
+    const date = utcToZonedTime(dateString, timeZone);
+
+    return format(date, "d 'de' MMMM yyyy 'às' HH:mm", {
+      locale: ptBR,
     });
   } catch (e) {
-    return "Data inválida";
+    return 'Data inválida';
   }
 };
 
