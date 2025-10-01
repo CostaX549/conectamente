@@ -69,15 +69,11 @@ export function AppointmentCard({
 
  const formatDateTime = (dateString) => {
   try {
-    // define o fuso horário fixo
-    const timeZone = 'America/Sao_Paulo';
-    const date = utcToZonedTime(dateString, timeZone);
-
-    return format(date, "d 'de' MMMM yyyy 'às' HH:mm", {
-      locale: ptBR,
+    return format(new Date(dateString), "d 'de' MMMM yyyy 'às' HH:mm", {
+      locale: ptBR, // <- aqui definimos o português
     });
   } catch (e) {
-    return 'Data inválida';
+    return "Data inválida";
   }
 };
 
