@@ -119,7 +119,7 @@ export default function Home() {
 
             <div className="rounded-2xl overflow-hidden">
               <Image
-                src="/psicologo.jpg"
+                src="/psicologo2.jpg"
                 alt="Sessão de vídeo chamada"
                 width={600}
                 height={400}
