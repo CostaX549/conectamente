@@ -114,7 +114,7 @@ export async function getChatMessages(chatId) {
 /**
  * Envia uma nova mensagem em um chat
  */
-import { pusherServer } from "@/lib/pusher"; // ou reverb, depende do seu setup
+
 
 // ...
 export async function sendMessage(formData) {
