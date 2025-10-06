@@ -3,6 +3,7 @@
 import { db } from "@/lib/prisma";
 import { auth } from "@clerk/nextjs/server";
 import { revalidatePath } from "next/cache";
+import { pusherServer } from "@/lib/pusher";
 
 /**
  * Verifica se o usuário está autenticado
@@ -113,6 +114,9 @@ export async function getChatMessages(chatId) {
 /**
  * Envia uma nova mensagem em um chat
  */
+import { pusherServer } from "@/lib/pusher"; // ou reverb, depende do seu setup
+
+// ...
 export async function sendMessage(formData) {
   const user = await getCurrentUser();
 
@@ -124,14 +128,12 @@ export async function sendMessage(formData) {
     throw new Error("Mensagem inválida");
   }
 
-  // Verifica se o usuário faz parte do chat
   const chat = await db.chat.findUnique({ where: { id: chatId } });
   if (!chat) throw new Error("Chat não encontrado");
 
   if (chat.patientId !== user.id && chat.doctorId !== user.id)
-    throw new Error("Você não pode enviar mensagens neste chat");
+    throw new Error("Você não faz parte deste chat");
 
-  // Cria a mensagem
   const message = await db.message.create({
     data: {
       chatId,
@@ -139,17 +141,17 @@ export async function sendMessage(formData) {
       content,
       fileUrl,
     },
+    include: {
+      sender: { select: { id: true, name: true, imageUrl: true } },
+    },
   });
 
-  // Atualiza o chat
-  await db.chat.update({
-    where: { id: chatId },
-    data: { updatedAt: new Date() },
-  });
+  // Envia evento em tempo real
+  await pusherServer.trigger(`chat-${chatId}`, "new-message", message);
 
-  revalidatePath(`/chat/${chatId}`);
   return { message };
 }
+
 
 /**
  * Desativa um chat (caso o paciente cancele o agendamento, por exemplo)
