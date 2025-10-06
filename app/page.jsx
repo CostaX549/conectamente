@@ -44,7 +44,7 @@ export default function Home() {
             <div className="absolute -inset-6 bg-emerald-900/30 rounded-3xl rotate-3 blur-2xl" />
             <div className="relative rounded-3xl overflow-hidden shadow-2xl shadow-emerald-900/40">
               <Image
-                src="/banner2.png"
+                src="/terapia-online-videochamada.jpg"
                 alt="Sessão de terapia online"
                 width={700}
                 height={500}
@@ -119,7 +119,7 @@ export default function Home() {
 
             <div className="rounded-2xl overflow-hidden">
               <Image
-                src="/banner2.png"
+                src="/terapia-online-videochamada.jpg"
                 alt="Sessão de vídeo chamada"
                 width={600}
                 height={400}
@@ -158,7 +158,7 @@ export default function Home() {
 
       {/* CTA FINAL - estilo glassmorphism */}
       <section className="relative py-28">
-        <div className="absolute inset-0 bg-[url('/banner2.png')] bg-cover bg-center opacity-20" />
+        <div className="absolute inset-0 bg-[url('/terapia-online-videochamada.jpg')] bg-cover bg-center opacity-20" />
         <div className="container relative mx-auto px-6 text-center">
           <div className="max-w-3xl mx-auto bg-background/70 backdrop-blur-md border border-emerald-800/30 rounded-3xl p-10">
             <h2 className="text-4xl font-bold mb-4">Precisa de suporte?</h2>
