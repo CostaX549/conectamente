@@ -9,105 +9,103 @@ import Pricing from "@/components/pricing";
 
 export default function Home() {
   return (
-    <div className="bg-background text-white">
-      {/* Hero */}
-      <section className="relative py-24 md:py-40 bg-gradient-to-b from-emerald-950/70 to-background">
-        <div className="container mx-auto px-6 grid lg:grid-cols-2 gap-12 items-center">
-          <div className="space-y-6">
-            <Badge className="bg-emerald-900/50 border-emerald-800/40 text-emerald-400 text-sm px-3 py-1">
-              Psicologia Digital
-            </Badge>
+    <main className="bg-background text-white overflow-hidden">
 
-            <h1 className="text-5xl md:text-6xl font-extrabold leading-tight">
-              Encontre seu <span className="text-emerald-400">psicólogo</span> ideal <br />
-              com apenas alguns cliques
+      {/* HERO - layout de dois blocos diagonais */}
+      <section className="relative min-h-screen flex flex-col justify-center overflow-hidden">
+        <div className="absolute inset-0 bg-gradient-to-br from-emerald-900 via-background to-emerald-950 opacity-90" />
+        <div className="absolute -top-40 -right-40 w-[500px] h-[500px] bg-emerald-600/30 blur-3xl rounded-full" />
+        <div className="container relative z-10 mx-auto px-6 flex flex-col lg:flex-row items-center gap-20">
+          <div className="lg:w-1/2 space-y-8 text-center lg:text-left">
+            <h1 className="text-5xl md:text-7xl font-extrabold leading-tight">
+              Terapia <span className="text-emerald-400">sem barreiras</span>
             </h1>
-
-            <p className="text-muted-foreground text-lg max-w-lg">
-              Uma plataforma feita para conectar você com profissionais da saúde mental — de forma rápida, segura e acessível.
+            <p className="text-muted-foreground text-lg max-w-md mx-auto lg:mx-0">
+              Psicólogos disponíveis 24h — atendimento humanizado, online e confidencial.
             </p>
-
-            <div className="flex flex-wrap gap-4">
+            <div className="flex flex-wrap justify-center lg:justify-start gap-4">
               <Button size="lg" asChild className="bg-emerald-600 hover:bg-emerald-700">
                 <Link href="/onboarding">
-                  Começar agora <ArrowRight className="ml-2 h-4 w-4" />
+                  Começar <ArrowRight className="ml-2 h-4 w-4" />
                 </Link>
               </Button>
-              <Button size="lg" variant="outline" className="border-emerald-700/40 hover:bg-muted/70">
-                <Link href="/doctors">Explorar profissionais</Link>
+              <Button
+                variant="outline"
+                size="lg"
+                className="border-emerald-800/40 hover:bg-emerald-900/30"
+                asChild
+              >
+                <Link href="/doctors">Ver psicólogos</Link>
               </Button>
             </div>
           </div>
 
-          <div className="relative h-[380px] md:h-[520px] rounded-2xl overflow-hidden shadow-xl shadow-emerald-900/30">
-            <Image
-              src="/banner2.png"
-              alt="Atendimento psicológico online"
-              fill
-              priority
-              className="object-cover rounded-2xl"
-            />
+          <div className="lg:w-1/2 relative">
+            <div className="absolute -inset-6 bg-emerald-900/30 rounded-3xl rotate-3 blur-2xl" />
+            <div className="relative rounded-3xl overflow-hidden shadow-2xl shadow-emerald-900/40">
+              <Image
+                src="/banner2.png"
+                alt="Sessão de terapia online"
+                width={700}
+                height={500}
+                className="object-cover"
+              />
+            </div>
           </div>
         </div>
       </section>
 
-      {/* Features */}
-      <section className="py-24 bg-muted/20">
-        <div className="container mx-auto px-6">
-          <div className="text-center mb-16">
-            <h2 className="text-4xl font-bold mb-3">Como funciona</h2>
-            <p className="text-muted-foreground max-w-2xl mx-auto">
-              Simples, rápido e feito para você cuidar da sua saúde emocional
-            </p>
-          </div>
-
-          <div className="grid md:grid-cols-3 gap-10">
-            {features.map((feature, index) => (
-              <Card
-                key={index}
-                className="bg-background/70 border border-emerald-900/20 hover:border-emerald-800/40 hover:bg-emerald-900/10 transition-all duration-300"
-              >
-                <CardHeader>
-                  <div className="bg-emerald-900/30 p-3 rounded-lg w-fit mb-4">
-                    {feature.icon}
-                  </div>
-                  <CardTitle>{feature.title}</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <p className="text-muted-foreground">{feature.description}</p>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
+      {/* BLOCO DE FEATURES ALTERNADO */}
+      <section className="py-32 bg-gradient-to-b from-background to-emerald-950/20">
+        <div className="container mx-auto px-6 space-y-20">
+          {features.map((feature, index) => (
+            <div
+              key={index}
+              className={`flex flex-col lg:flex-row items-center gap-16 ${
+                index % 2 === 1 ? "lg:flex-row-reverse" : ""
+              }`}
+            >
+              <div className="lg:w-1/2 space-y-4">
+                <Badge className="bg-emerald-900/40 border-emerald-700/30 text-emerald-400">
+                  Etapa {index + 1}
+                </Badge>
+                <h2 className="text-4xl font-bold">{feature.title}</h2>
+                <p className="text-muted-foreground text-lg">{feature.description}</p>
+              </div>
+              <div className="lg:w-1/2">
+                <div className="bg-emerald-900/20 border border-emerald-800/30 rounded-2xl p-10 flex justify-center items-center h-[280px]">
+                  {feature.icon}
+                </div>
+              </div>
+            </div>
+          ))}
         </div>
       </section>
 
-      {/* Pricing */}
-      <section className="py-24">
-        <div className="container mx-auto px-6">
-          <div className="text-center mb-16">
-            <Badge className="bg-emerald-900/30 border-emerald-800/40 text-emerald-400 mb-3">
-              Planos e Créditos
-            </Badge>
-            <h2 className="text-4xl font-bold mb-3">Escolha seu plano ideal</h2>
+      {/* PRICING + BENEFÍCIOS */}
+      <section className="relative py-32">
+        <div className="absolute inset-0 bg-gradient-to-r from-emerald-950/60 to-background" />
+        <div className="container relative z-10 mx-auto px-6">
+          <div className="text-center mb-20">
+            <h2 className="text-4xl md:text-5xl font-bold mb-4">
+              Nossos planos de <span className="text-emerald-400">terapia</span>
+            </h2>
             <p className="text-muted-foreground max-w-2xl mx-auto">
-              Nossos pacotes se adaptam às suas necessidades — sem complicações.
+              Pague por consulta ou adquira créditos para mais flexibilidade.
             </p>
           </div>
 
           <Pricing />
 
-          <Card className="mt-16 bg-muted/10 border-emerald-900/30">
-            <CardHeader>
-              <CardTitle className="text-xl flex items-center">
-                <Stethoscope className="mr-2 text-emerald-400" /> Sistema de Créditos
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
+          <div className="mt-20 grid md:grid-cols-2 gap-12">
+            <div className="bg-muted/20 p-10 rounded-2xl border border-emerald-900/30">
+              <h3 className="flex items-center text-xl font-semibold mb-6">
+                <Stethoscope className="mr-3 text-emerald-400" /> Benefícios do sistema de créditos
+              </h3>
               <ul className="space-y-3">
                 {creditBenefits.map((benefit, index) => (
                   <li key={index} className="flex items-start">
-                    <div className="mr-3 mt-1 bg-emerald-900/20 p-1 rounded-full">
+                    <div className="mr-3 mt-1 bg-emerald-900/30 p-1 rounded-full">
                       <Check className="h-4 w-4 text-emerald-400" />
                     </div>
                     <p
@@ -117,43 +115,40 @@ export default function Home() {
                   </li>
                 ))}
               </ul>
-            </CardContent>
-          </Card>
+            </div>
+
+            <div className="rounded-2xl overflow-hidden">
+              <Image
+                src="/banner2.png"
+                alt="Sessão de vídeo chamada"
+                width={600}
+                height={400}
+                className="object-cover w-full h-full"
+              />
+            </div>
+          </div>
         </div>
       </section>
 
-      {/* Testimonials */}
-      <section className="py-24 bg-muted/20">
-        <div className="container mx-auto px-6">
-          <div className="text-center mb-16">
-            <Badge className="bg-emerald-900/40 border-emerald-800/40 text-emerald-400 mb-3">
-              Depoimentos
-            </Badge>
-            <h2 className="text-4xl font-bold mb-3">O que dizem nossos usuários</h2>
-            <p className="text-muted-foreground max-w-2xl mx-auto">
-              Experiências reais de pacientes e psicólogos
-            </p>
-          </div>
-
-          <div className="grid md:grid-cols-3 gap-10">
+      {/* TESTEMUNHOS - formato carrossel */}
+      <section className="py-32 bg-emerald-950/30 backdrop-blur-md">
+        <div className="container mx-auto px-6 text-center">
+          <h2 className="text-4xl font-bold mb-12">O que nossos pacientes dizem</h2>
+          <div className="flex flex-col md:flex-row gap-8 justify-center">
             {testimonials.map((testimonial, index) => (
               <Card
                 key={index}
-                className="bg-background/70 border border-emerald-900/20 hover:border-emerald-700/40 transition-all duration-300"
+                className="bg-background/70 border-emerald-800/30 shadow-lg p-6 w-full md:w-1/3"
               >
                 <CardContent>
-                  <div className="flex items-center mb-4">
-                    <div className="w-12 h-12 rounded-full bg-emerald-900/30 flex items-center justify-center mr-4">
+                  <div className="flex flex-col items-center mb-4">
+                    <div className="w-14 h-14 rounded-full bg-emerald-900/40 flex items-center justify-center mb-3">
                       <span className="text-emerald-400 font-bold">{testimonial.initials}</span>
                     </div>
-                    <div>
-                      <h4 className="font-semibold">{testimonial.name}</h4>
-                      <p className="text-sm text-muted-foreground">{testimonial.role}</p>
-                    </div>
+                    <h4 className="font-semibold">{testimonial.name}</h4>
+                    <p className="text-sm text-muted-foreground">{testimonial.role}</p>
                   </div>
-                  <p className="text-muted-foreground italic">
-                    “{testimonial.quote}”
-                  </p>
+                  <p className="text-muted-foreground text-center">“{testimonial.quote}”</p>
                 </CardContent>
               </Card>
             ))}
@@ -161,28 +156,31 @@ export default function Home() {
         </div>
       </section>
 
-      {/* CTA */}
-      <section className="py-24 bg-gradient-to-r from-emerald-950/40 to-emerald-900/20">
-        <div className="container mx-auto px-6 text-center">
-          <h2 className="text-4xl font-bold mb-6">Precisa de ajuda?</h2>
-          <p className="text-muted-foreground text-lg max-w-xl mx-auto mb-8">
-            Fale diretamente com nossa equipe via WhatsApp. Estamos aqui para ajudar você a cuidar da mente.
-          </p>
-          <Button
-            size="lg"
-            className="bg-emerald-600 text-white hover:bg-emerald-700"
-            asChild
-          >
-            <Link
-              href="https://wa.me/5512991789979"
-              target="_blank"
-              rel="noopener noreferrer"
+      {/* CTA FINAL - estilo glassmorphism */}
+      <section className="relative py-28">
+        <div className="absolute inset-0 bg-[url('/banner2.png')] bg-cover bg-center opacity-20" />
+        <div className="container relative mx-auto px-6 text-center">
+          <div className="max-w-3xl mx-auto bg-background/70 backdrop-blur-md border border-emerald-800/30 rounded-3xl p-10">
+            <h2 className="text-4xl font-bold mb-4">Precisa de suporte?</h2>
+            <p className="text-muted-foreground mb-8">
+              Nossa equipe de atendimento está disponível para te ajudar a qualquer momento.
+            </p>
+            <Button
+              size="lg"
+              className="bg-emerald-600 text-white hover:bg-emerald-700"
+              asChild
             >
-              Fale Conosco
-            </Link>
-          </Button>
+              <Link
+                href="https://wa.me/5512991789979"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                Falar no WhatsApp
+              </Link>
+            </Button>
+          </div>
         </div>
       </section>
-    </div>
+    </main>
   );
 }
