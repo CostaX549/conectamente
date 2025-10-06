@@ -18,7 +18,7 @@ export default function Home() {
         <div className="container relative z-10 mx-auto px-6 flex flex-col lg:flex-row items-center gap-20">
           <div className="lg:w-1/2 space-y-8 text-center lg:text-left">
             <h1 className="text-5xl md:text-7xl font-extrabold leading-tight">
-              Terapia <span className="text-emerald-400">sem barreiras</span>
+              ConectaMente <br/> <span className="text-emerald-400">Terapia sem barreiras</span>
             </h1>
             <p className="text-muted-foreground text-lg max-w-md mx-auto lg:mx-0">
               Psicólogos disponíveis 24h — atendimento humanizado, online e confidencial.
