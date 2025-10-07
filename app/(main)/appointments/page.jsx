@@ -32,13 +32,15 @@ export default async function PatientAppointmentsPage() {
             Seus Agendamentos
           </CardTitle>
         </CardHeader>
+
         <CardContent>
           {error ? (
             <div className="text-center py-8">
               <p className="text-red-400">Erro: {error}</p>
             </div>
           ) : appointments?.length > 0 ? (
-            <div className="space-y-4">
+            // 🔹 GRID RESPONSIVO
+            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
               {appointments.map((appointment) => (
                 <AppointmentCard
                   key={appointment.id}
@@ -54,7 +56,8 @@ export default async function PatientAppointmentsPage() {
                 Nenhum agendamento
               </h3>
               <p className="text-muted-foreground">
-                Você ainda não possui nenhum agendamento. Navegue pelos nossos médicos e marque sua primeira consulta.
+                Você ainda não possui nenhum agendamento. Navegue pelos nossos
+                médicos e marque sua primeira consulta.
               </p>
             </div>
           )}
