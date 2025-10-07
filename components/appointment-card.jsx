@@ -203,81 +203,74 @@ export function AppointmentCard({
 
   return (
     <>
-      <Card className="border-emerald-900/20 hover:border-emerald-700/30 transition-all">
-        <CardContent className="p-4">
-          <div className="flex flex-col md:flex-row justify-between gap-4">
-            <div className="flex items-start gap-3">
-              <div className="bg-muted/20 rounded-full p-2 mt-1">
-                {otherPartyIcon}
-              </div>
-              <div>
-                <h3 className="font-medium text-white">
-                  {userRole === "DOCTOR"
-                    ? otherParty.name
-                    : `Dr. ${otherParty.name}`}
-                </h3>
-                {userRole === "DOCTOR" && (
-                  <p className="text-sm text-muted-foreground">
-                    {otherParty.email}
-                  </p>
-                )}
-                {userRole === "PATIENT" && (
-                  <p className="text-sm text-muted-foreground">
-                    {otherParty.specialty}
-                  </p>
-                )}
-                <div className="flex items-center mt-2 text-sm text-muted-foreground">
-                  <Calendar className="h-4 w-4 mr-1" />
-                  <span>{formatDateTime(appointment.startTime)}</span>
-                </div>
-                <div className="flex items-center mt-1 text-sm text-muted-foreground">
-                  <Clock className="h-4 w-4 mr-1" />
-                  <span>
-                    {formatTime(appointment.startTime)} - {formatTime(appointment.endTime)}
-                  </span>
-                </div>
-              </div>
+       <Card className="border-emerald-900/20 hover:border-emerald-700/40 transition-all shadow-md bg-gradient-to-b from-emerald-950/40 to-emerald-900/20">
+        <CardContent className="p-5 flex flex-col gap-4">
+          {/* Info principal */}
+          <div className="flex flex-col items-start gap-2">
+            <div className="flex items-center gap-2 text-emerald-400">
+              <div className="bg-muted/20 rounded-full p-2">{otherPartyIcon}</div>
+              <h3 className="font-semibold text-white text-lg">
+                {userRole === "DOCTOR" ? otherParty.name : `Dr. ${otherParty.name}`}
+              </h3>
             </div>
-            <div className="flex flex-col gap-2 self-end md:self-start">
-              <Badge
-                variant="outline"
-                className={
-                  appointment.status === "COMPLETED"
-                    ? "bg-emerald-900/20 border-emerald-900/30 text-emerald-400"
-                    : appointment.status === "CANCELLED"
-                    ? "bg-red-900/20 border-red-900/30 text-red-400"
-                    : "bg-amber-900/20 border-amber-900/30 text-amber-400"
-                }
-              >
-                {appointment.status}
-              </Badge>
-              <div className="flex gap-2 mt-2 flex-wrap">
-                {canMarkCompleted() && (
-                  <Button
-                    size="sm"
-                    onClick={handleMarkCompleted}
-                    disabled={completeLoading}
-                    className="bg-emerald-600 hover:bg-emerald-700"
-                  >
-                    {completeLoading ? (
-                      <Loader2 className="h-4 w-4 animate-spin" />
-                    ) : (
-                      <>
-                        <CheckCircle className="h-4 w-4 mr-1" />
-                        Concluir
-                      </>
-                    )}
-                  </Button>
-                )}
+
+            <div className="text-sm text-muted-foreground">
+              {userRole === "DOCTOR"
+                ? otherParty.email
+                : otherParty.specialty}
+            </div>
+
+            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+              <Calendar className="h-4 w-4" />
+              <span>{formatDateTime(appointment.startTime)}</span>
+            </div>
+            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+              <Clock className="h-4 w-4" />
+              <span>
+                {formatTime(appointment.startTime)} – {formatTime(appointment.endTime)}
+              </span>
+            </div>
+          </div>
+
+          {/* Status + ações */}
+          <div className="flex flex-col items-start gap-3 mt-3 w-full">
+            <Badge
+              variant="outline"
+              className={
+                appointment.status === "COMPLETED"
+                  ? "bg-emerald-900/20 border-emerald-900/30 text-emerald-400"
+                  : appointment.status === "CANCELLED"
+                  ? "bg-red-900/20 border-red-900/30 text-red-400"
+                  : "bg-amber-900/20 border-amber-900/30 text-amber-400"
+              }
+            >
+              {appointment.status}
+            </Badge>
+
+            <div className="flex flex-col gap-2 w-full">
+              {canMarkCompleted() && (
                 <Button
-                  size="sm"
-                  variant="outline"
-                  className="border-emerald-900/30"
-                  onClick={() => setOpen(true)}
+                  onClick={handleMarkCompleted}
+                  disabled={completeLoading}
+                  className="bg-emerald-600 hover:bg-emerald-700 w-full"
                 >
-                  Ver Detalhes
+                  {completeLoading ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <>
+                      <CheckCircle className="h-4 w-4 mr-1" />
+                      Marcar como Concluída
+                    </>
+                  )}
                 </Button>
-              </div>
+              )}
+              <Button
+                variant="outline"
+                className="border-emerald-900/30 w-full"
+                onClick={() => setOpen(true)}
+              >
+                Ver Detalhes
+              </Button>
             </div>
           </div>
         </CardContent>
