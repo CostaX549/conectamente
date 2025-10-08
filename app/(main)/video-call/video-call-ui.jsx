@@ -284,16 +284,18 @@ const handleSendMessage = async () => {
 
     {/* Mensagens */}
     <div className="flex-1 overflow-y-auto p-4 space-y-2">
-      {messages.map((msg, index) => (
-        <p
-          key={index}
-          className={`p-2 rounded max-w-[70%] ${
-            msg.sender === "me" ? "bg-muted/20 self-end" : "bg-emerald-900/20 self-start"
-          }`}
-        >
-          {msg.content}
-        </p>
-      ))}
+     {messages.map((msg, index) => {
+  const isMe = currentUser && msg.senderId === currentUser.id;
+  return (
+    <p
+      key={index}
+      className={`p-2 rounded max-w-[70%] ${isMe ? "bg-muted/20 self-end" : "bg-emerald-900/20 self-start"}`}
+    >
+      {msg.content}
+    </p>
+  );
+})}
+
       <div ref={messagesEndRef} />
     </div>
 
