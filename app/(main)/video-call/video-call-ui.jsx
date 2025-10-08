@@ -49,12 +49,19 @@ const { fn: sendMsg, loading: sendingMessage } = useFetch(sendMessage);
 
 const loadMessages = async () => {
   const data = await fetchMessages(chatId);
-  if (!data) return;
+  if (!data?.messages) return;
 
-  const msgs = data.messages ?? data;
+  // Padroniza cada mensagem para sempre ter senderId e content
+  const msgs = data.messages.map(msg => ({
+    id: msg.id,
+    content: msg.content,
+    senderId: msg.senderId,
+  }));
+
   setMessages(msgs);
   messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
 };
+
 
   loadMessages();
 }, [chatId, fetchMessages]);
@@ -86,23 +93,23 @@ const loadMessages = async () => {
   };
 }, [chatId]);
 const handleSendMessage = async () => {
-  if (!newMessage.trim()) return;
+  if (!newMessage.trim() || !currentUser) return;
 
   const content = newMessage;
-  setMessages(prev => [...prev, { content, senderId: currentUser.id }]); // update imediato
-  setNewMessage(""); 
+  setNewMessage(""); // limpa o input imediatamente
 
   const formData = new FormData();
   formData.append("chatId", chatId);
   formData.append("content", content);
 
   try {
-    await sendMsg(formData); // disparar server
+    await sendMsg(formData); // dispara para o servidor
+    // não adiciona localmente, espera o Pusher disparar
   } catch (error) {
     toast.error("Erro ao enviar a mensagem");
-    setMessages(prev => prev.filter(m => m.content !== content)); // remove se falhar
   }
 };
+
 
 
 
