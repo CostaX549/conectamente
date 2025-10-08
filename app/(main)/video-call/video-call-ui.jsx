@@ -305,49 +305,69 @@ useEffect(() => {
                   </Button>
                 </SheetTrigger>
 
-                <SheetContent side="right" className="w-80 flex flex-col h-full">
-                  <SheetHeader>
-                    <SheetTitle>Chat</SheetTitle>
-                    <SheetClose />
-                  </SheetHeader>
+               <SheetContent side="right" className="w-96 flex flex-col h-full bg-gradient-to-b from-emerald-950 to-emerald-900 text-white">
+  <SheetHeader className="border-b border-emerald-800 pb-2">
+    <SheetTitle className="text-emerald-300 text-lg">Chat da Consulta</SheetTitle>
+    <SheetClose />
+  </SheetHeader>
 
-                  <div className="flex-1 overflow-y-auto p-4 space-y-2">
-                    {messages.map((msg) => {
-                      const isMe = currentUser && msg.senderId === currentUser.id;
-                      return (
-                        <p
-                          key={msg.id}
-                          className={`p-2 rounded max-w-[70%] ${
-                            isMe
-                              ? "bg-muted/20 self-end"
-                              : "bg-emerald-900/20 self-start"
-                          }`}
-                        >
-                          {msg.content}
-                        </p>
-                      );
-                    })}
-                    <div ref={messagesEndRef} />
-                  </div>
+  {/* MENSAGENS */}
+  <div className="flex-1 overflow-y-auto p-4 space-y-3 scrollbar-thin scrollbar-thumb-emerald-800/40 scrollbar-track-transparent">
+    {messages.map((msg) => {
+      const isMe = currentUser && msg.senderId === currentUser.id;
+      return (
+        <div
+          key={msg.id}
+          className={`flex ${isMe ? "justify-end" : "justify-start"}`}
+        >
+          <div
+            className={`relative max-w-[75%] px-4 py-2 rounded-2xl text-sm shadow-md ${
+              isMe
+                ? "bg-emerald-600 text-white rounded-br-none"
+                : "bg-emerald-800/40 text-emerald-50 rounded-bl-none"
+            }`}
+          >
+            <p>{msg.content}</p>
+            <span
+              className={`absolute bottom-1 right-3 text-[10px] opacity-70 ${
+                isMe ? "text-emerald-50" : "text-emerald-200"
+              }`}
+            >
+              {msg.created_at
+                ? new Date(msg.created_at).toLocaleTimeString("pt-BR", {
+                    hour: "2-digit",
+                    minute: "2-digit",
+                  })
+                : ""}
+            </span>
+          </div>
+        </div>
+      );
+    })}
+    <div ref={messagesEndRef} />
+  </div>
 
-                  <div className="p-2 border-t flex space-x-2">
-                    <input
-                      type="text"
-                      placeholder="Digite uma mensagem..."
-                      className="flex-1 border rounded p-2"
-                      value={newMessage}
-                      onChange={(e) => setNewMessage(e.target.value)}
-                      onKeyDown={(e) => e.key === "Enter" && handleSendMessage()}
-                    />
-                    <Button
-                      size="sm"
-                      onClick={handleSendMessage}
-                      disabled={!newMessage.trim()}
-                    >
-                      Enviar
-                    </Button>
-                  </div>
-                </SheetContent>
+  {/* INPUT */}
+  <div className="p-3 border-t border-emerald-800 bg-emerald-950/60 flex space-x-2">
+    <input
+      type="text"
+      placeholder="Digite uma mensagem..."
+      className="flex-1 bg-emerald-900/40 border border-emerald-800 rounded-full px-4 py-2 text-sm text-white placeholder-emerald-400 focus:outline-none focus:ring-1 focus:ring-emerald-600"
+      value={newMessage}
+      onChange={(e) => setNewMessage(e.target.value)}
+      onKeyDown={(e) => e.key === "Enter" && handleSendMessage()}
+    />
+    <Button
+      size="sm"
+      onClick={handleSendMessage}
+      disabled={!newMessage.trim()}
+      className="bg-emerald-600 hover:bg-emerald-700 text-white rounded-full px-4"
+    >
+      Enviar
+    </Button>
+  </div>
+</SheetContent>
+
               </Sheet>
 
               <Button
