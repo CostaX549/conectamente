@@ -47,16 +47,14 @@ const { fn: sendMsg, loading: sendingMessage } = useFetch(sendMessage);
   useEffect(() => {
   if (!chatId) return;
 
-  const loadMessages = async () => {
-   const data = await fetchMessages(chatId);
+const loadMessages = async () => {
+  const data = await fetchMessages(chatId);
+  if (!data) return;
 
-if (!data) return;
-
-const msgs = data.messages ?? data; // se o server retornar array direto
-setMessages(msgs);
-messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-    
-  };
+  const msgs = data.messages ?? data;
+  setMessages(msgs);
+  messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+};
 
   loadMessages();
 }, [chatId, fetchMessages]);
@@ -90,17 +88,22 @@ messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
 const handleSendMessage = async () => {
   if (!newMessage.trim()) return;
 
+  const content = newMessage;
+  setMessages(prev => [...prev, { content, senderId: currentUser.id }]); // update imediato
+  setNewMessage(""); 
+
   const formData = new FormData();
   formData.append("chatId", chatId);
-  formData.append("content", newMessage);
+  formData.append("content", content);
 
-  const { message } = await sendMsg(formData);
-  if (message) {
-    setMessages((prev) => [...prev, message]);
-    setNewMessage("");
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  try {
+    await sendMsg(formData); // disparar server
+  } catch (error) {
+    toast.error("Erro ao enviar a mensagem");
+    setMessages(prev => prev.filter(m => m.content !== content)); // remove se falhar
   }
 };
+
 
 
   const sessionRef = useRef(null);
