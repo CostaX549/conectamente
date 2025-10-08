@@ -57,31 +57,33 @@ export default function Home() {
 
       {/* BLOCO DE FEATURES ALTERNADO */}
    {/* BLOCO DE FEATURES ALTERNADO */}
+{/* BLOCO DE FEATURES ALTERNADO */}
 <section className="py-32 bg-gradient-to-b from-background to-emerald-950/20">
-  <div className="container mx-auto px-6 space-y-20">
+  <div className="container mx-auto px-6 space-y-24 lg:space-y-28">
     {features.map((feature, index) => (
       <div
         key={index}
-        className={`flex flex-col lg:flex-row items-center gap-12 ${
+        className={`flex flex-col lg:flex-row items-center justify-between gap-16 lg:gap-24 ${
           index % 2 === 1 ? "lg:flex-row-reverse" : ""
         }`}
       >
         {/* Texto */}
-        <div className="w-full lg:w-1/2 space-y-4 text-center lg:text-left">
+        <div className="w-full lg:w-[55%] space-y-4 text-center lg:text-left">
           <Badge className="bg-emerald-900/40 border-emerald-700/30 text-emerald-400 mx-auto lg:mx-0">
             Etapa {index + 1}
           </Badge>
-          <h2 className="text-3xl md:text-4xl font-bold">{feature.title}</h2>
-          <p className="text-muted-foreground text-base md:text-lg max-w-md mx-auto lg:mx-0">
+          <h2 className="text-3xl md:text-5xl font-bold leading-tight">
+            {feature.title}
+          </h2>
+          <p className="text-muted-foreground text-base md:text-lg max-w-xl mx-auto lg:mx-0">
             {feature.description}
           </p>
         </div>
 
         {/* Ícone */}
-        <div className="w-full lg:w-1/2 flex justify-center">
-          <div className="bg-emerald-900/20 border border-emerald-800/30 rounded-2xl p-8 md:p-12 flex justify-center items-center w-full max-w-[300px] h-[220px] md:h-[280px]">
-            {/* aumente o tamanho do ícone */}
-            <div className="scale-150 md:scale-175 text-emerald-400">
+        <div className="w-full lg:w-[45%] flex justify-center">
+          <div className="bg-emerald-900/20 border border-emerald-800/30 rounded-3xl p-10 md:p-16 flex justify-center items-center w-full max-w-[400px] h-[260px] md:h-[320px] lg:max-w-[500px] lg:h-[360px]">
+            <div className="scale-150 md:scale-[1.75] lg:scale-[2] text-emerald-400">
               {feature.icon}
             </div>
           </div>
@@ -90,6 +92,7 @@ export default function Home() {
     ))}
   </div>
 </section>
+
 
 
       {/* PRICING + BENEFÍCIOS */}
