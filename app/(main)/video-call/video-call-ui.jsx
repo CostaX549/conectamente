@@ -48,11 +48,14 @@ const { fn: sendMsg, loading: sendingMessage } = useFetch(sendMessage);
   if (!chatId) return;
 
   const loadMessages = async () => {
-    const { messages: msgs } = await fetchMessages(chatId);
-    if (msgs) {
-      setMessages(msgs);
-      messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-    }
+   const data = await fetchMessages(chatId);
+
+if (!data) return;
+
+const msgs = data.messages ?? data; // se o server retornar array direto
+setMessages(msgs);
+messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    
   };
 
   loadMessages();
