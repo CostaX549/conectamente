@@ -1,13 +1,11 @@
 'use client';
 
-import useFetch from "@/hooks/use-fetch";
-import { getChatMessages, sendMessage } from "@/actions/chat";
-import { getCurrentUser } from "@/actions/onboarding"
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import Script from "next/script";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
+import { toast } from "sonner";
+import { getChatMessages, sendMessage } from "@/actions/chat";
+import { getCurrentUser } from "@/actions/onboarding";
 import { pusherClient } from "@/lib/pusher";
 import {
   Loader2,
@@ -16,10 +14,10 @@ import {
   Mic,
   MicOff,
   PhoneOff,
-  MessageCircle, // ícone do chat
+  MessageCircle,
   User,
 } from "lucide-react";
-import { toast } from "sonner";
+import { Button } from "@/components/ui/button";
 import {
   Sheet,
   SheetContent,
@@ -36,90 +34,84 @@ export default function VideoCall({ sessionId, token, chatId }) {
   const [isVideoEnabled, setIsVideoEnabled] = useState(true);
   const [isAudioEnabled, setIsAudioEnabled] = useState(true);
   const [isChatOpen, setIsChatOpen] = useState(false);
-    const [currentUser, setCurrentUser] = useState(null);
 
-const [messages, setMessages] = useState([]);
-const [newMessage, setNewMessage] = useState("");
-const messagesEndRef = useRef(null);
+  const [currentUser, setCurrentUser] = useState(null);
+  const [messages, setMessages] = useState([]);
+  const [newMessage, setNewMessage] = useState("");
 
-const { fn: fetchMessages, loading: loadingMessages } = useFetch(getChatMessages);
-const { fn: sendMsg, loading: sendingMessage } = useFetch(sendMessage);
+  const messagesEndRef = useRef(null);
+  const sessionRef = useRef(null);
+  const publisherRef = useRef(null);
+  const router = useRouter();
+
+  const appId = process.env.NEXT_PUBLIC_VONAGE_APPLICATION_ID;
+
+  // 🔹 Carregar apenas as mensagens
   useEffect(() => {
-  if (!chatId) return;
+    if (!chatId) return;
 
-const loadMessages = async () => {
-  const data = await fetchMessages(chatId);
-  if (!data?.messages) return;
-
-  // Padroniza cada mensagem para sempre ter senderId e content
-  const msgs = data.messages.map(msg => ({
-    id: msg.id,
-    content: msg.content,
-    senderId: msg.senderId,
-  }));
-
-  setMessages(msgs);
-  messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-};
-
-
-  loadMessages();
-}, [chatId, fetchMessages]);
-    useEffect(() => {
-    const fetchUser = async () => {
-      const user = await getCurrentUser(); // chama a action
-      setCurrentUser(user);
+    const loadMessages = async () => {
+      try {
+        const messagesData = await getChatMessages(chatId);
+        console.log(messagesData)
+        setMessages(messagesData?.messages || []);
+      
+      } catch (err) {
+        toast.error("Erro ao carregar mensagens do chat");
+      }
     };
 
+    loadMessages();
+  }, [chatId]);
+
+  // 🔹 Buscar usuário atual
+  useEffect(() => {
+    const fetchUser = async () => {
+      const user = await getCurrentUser();
+      setCurrentUser(user);
+    };
     fetchUser();
   }, []);
 
+  // 🔹 Pusher — escutar novas mensagens
   useEffect(() => {
-  if (!chatId) return;
+    if (!chatId) return;
 
-  // Inscreve no canal do chat
-  const channel = pusherClient.subscribe(`chat-${chatId}`);
+    const channel = pusherClient.subscribe(`chat-${chatId}`);
+    channel.bind("new-message", (message) => {
+      setMessages((prev) => [...prev, message]);
+     
+    });
 
-  // Escuta novas mensagens
-  channel.bind("new-message", (message) => {
-    setMessages((prev) => [...prev, message]);
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  });
-
-  // Limpa ao desmontar
-  return () => {
-    channel.unbind_all();
-    channel.unsubscribe();
-  };
-}, [chatId]);
-const handleSendMessage = async () => {
-  if (!newMessage.trim() || !currentUser) return;
-
-  const content = newMessage;
-  setNewMessage(""); // limpa o input imediatamente
-
-  const formData = new FormData();
-  formData.append("chatId", chatId);
-  formData.append("content", content);
-
-  try {
-    await sendMsg(formData); // dispara para o servidor
-    // não adiciona localmente, espera o Pusher disparar
-  } catch (error) {
-    toast.error("Erro ao enviar a mensagem");
+    return () => {
+      channel.unbind_all();
+      channel.unsubscribe();
+    };
+  }, [chatId]);
+useEffect(() => {
+  if (messagesEndRef.current) {
+    messagesEndRef.current.scrollIntoView({ behavior: "smooth" });
   }
-};
+}, [messages]);
+  // 🔹 Enviar mensagem
+  const handleSendMessage = async () => {
+    if (!newMessage.trim() || !currentUser) return;
 
+    const formData = new FormData();
+    formData.append("chatId", chatId);
+    formData.append("content", newMessage);
 
+    setNewMessage("");
 
+    try {
+      await sendMessage(formData);
+      // Pusher trará a nova mensagem automaticamente
+    } catch {
+      toast.error("Erro ao enviar a mensagem");
+    }
+  };
 
-  const sessionRef = useRef(null);
-  const publisherRef = useRef(null);
-
-  const router = useRouter();
-  const appId = process.env.NEXT_PUBLIC_VONAGE_APPLICATION_ID;
-
-  // --- Script load / Session init (mesmo do seu código) ---
+  // 🔹 Inicializar Vonage Video
   const handleScriptLoad = () => {
     setScriptLoaded(true);
     if (!window.OT) {
@@ -132,7 +124,7 @@ const handleSendMessage = async () => {
 
   const initializeSession = () => {
     if (!appId || !sessionId || !token) {
-      toast.error("Parâmetros obrigatórios da chamada de vídeo ausentes");
+      toast.error("Parâmetros obrigatórios ausentes");
       router.push("/appointments");
       return;
     }
@@ -145,7 +137,7 @@ const handleSendMessage = async () => {
           event.stream,
           "subscriber",
           { insertMode: "append", width: "100%", height: "100%" },
-          (error) => error && toast.error("Erro ao conectar ao stream do outro participante")
+          (error) => error && toast.error("Erro ao conectar ao stream")
         );
       });
 
@@ -154,8 +146,14 @@ const handleSendMessage = async () => {
         setIsLoading(false);
         publisherRef.current = window.OT.initPublisher(
           "publisher",
-          { insertMode: "replace", width: "100%", height: "100%", publishAudio: isAudioEnabled, publishVideo: isVideoEnabled },
-          (error) => error && toast.error("Erro ao inicializar sua câmera e microfone")
+          {
+            insertMode: "replace",
+            width: "100%",
+            height: "100%",
+            publishAudio: isAudioEnabled,
+            publishVideo: isVideoEnabled,
+          },
+          (error) => error && toast.error("Erro ao inicializar câmera/microfone")
         );
       });
 
@@ -174,6 +172,7 @@ const handleSendMessage = async () => {
     }
   };
 
+  // 🔹 Controles de áudio/vídeo
   const toggleVideo = () => {
     if (publisherRef.current) {
       publisherRef.current.publishVideo(!isVideoEnabled);
@@ -194,6 +193,7 @@ const handleSendMessage = async () => {
     router.push("/appointments");
   };
 
+  // Cleanup
   useEffect(() => {
     return () => {
       publisherRef.current?.destroy();
@@ -201,13 +201,15 @@ const handleSendMessage = async () => {
     };
   }, []);
 
-  // --- Render ---
   return (
     <>
       <Script
         src="https://unpkg.com/@vonage/client-sdk-video@latest/dist/js/opentok.js"
         onLoad={handleScriptLoad}
-        onError={() => { toast.error("Falha ao carregar script da chamada de vídeo"); setIsLoading(false); }}
+        onError={() => {
+          toast.error("Falha ao carregar script da chamada de vídeo");
+          setIsLoading(false);
+        }}
       />
 
       <div className="container mx-auto px-4 py-8">
@@ -221,14 +223,18 @@ const handleSendMessage = async () => {
         {isLoading && !scriptLoaded ? (
           <div className="flex flex-col items-center justify-center py-12">
             <Loader2 className="h-12 w-12 text-emerald-400 animate-spin mb-4" />
-            <p className="text-white text-lg">Carregando componentes da chamada de vídeo...</p>
+            <p className="text-white text-lg">
+              Carregando componentes da chamada de vídeo...
+            </p>
           </div>
         ) : (
           <div className="space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               {/* Publisher */}
               <div className="border border-emerald-900/20 rounded-lg overflow-hidden">
-                <div className="bg-emerald-900/10 px-3 py-2 text-emerald-400 text-sm font-medium">Você</div>
+                <div className="bg-emerald-900/10 px-3 py-2 text-emerald-400 text-sm font-medium">
+                  Você
+                </div>
                 <div id="publisher" className="w-full h-[300px] md:h-[400px] bg-muted/30">
                   {!scriptLoaded && (
                     <div className="flex items-center justify-center h-full">
@@ -242,7 +248,9 @@ const handleSendMessage = async () => {
 
               {/* Subscriber */}
               <div className="border border-emerald-900/20 rounded-lg overflow-hidden">
-                <div className="bg-emerald-900/10 px-3 py-2 text-emerald-400 text-sm font-medium">Outro Participante</div>
+                <div className="bg-emerald-900/10 px-3 py-2 text-emerald-400 text-sm font-medium">
+                  Outro Participante
+                </div>
                 <div id="subscriber" className="w-full h-[300px] md:h-[400px] bg-muted/30">
                   {(!isConnected || !scriptLoaded) && (
                     <div className="flex items-center justify-center h-full">
@@ -255,13 +263,17 @@ const handleSendMessage = async () => {
               </div>
             </div>
 
-            {/* Video controls + Chat */}
+            {/* Controles e Chat */}
             <div className="flex justify-center space-x-4">
               <Button
                 variant="outline"
                 size="lg"
                 onClick={toggleVideo}
-                className={`rounded-full p-4 h-14 w-14 ${isVideoEnabled ? "border-emerald-900/30" : "bg-red-900/20 border-red-900/30 text-red-400"}`}
+                className={`rounded-full p-4 h-14 w-14 ${
+                  isVideoEnabled
+                    ? "border-emerald-900/30"
+                    : "bg-red-900/20 border-red-900/30 text-red-400"
+                }`}
                 disabled={!publisherRef.current}
               >
                 {isVideoEnabled ? <Video /> : <VideoOff />}
@@ -271,69 +283,72 @@ const handleSendMessage = async () => {
                 variant="outline"
                 size="lg"
                 onClick={toggleAudio}
-                className={`rounded-full p-4 h-14 w-14 ${isAudioEnabled ? "border-emerald-900/30" : "bg-red-900/20 border-red-900/30 text-red-400"}`}
+                className={`rounded-full p-4 h-14 w-14 ${
+                  isAudioEnabled
+                    ? "border-emerald-900/30"
+                    : "bg-red-900/20 border-red-900/30 text-red-400"
+                }`}
                 disabled={!publisherRef.current}
               >
                 {isAudioEnabled ? <Mic /> : <MicOff />}
               </Button>
 
-              {/* Chat button usando Sheet */}
-            {/* Chat button usando Sheet */}
-<Sheet open={isChatOpen} onOpenChange={setIsChatOpen}>
-  <SheetTrigger asChild>
-    <Button
-      variant="outline"
-      size="lg"
-      className="rounded-full p-4 h-14 w-14 border-emerald-900/30"
-    >
-      <MessageCircle />
-    </Button>
-  </SheetTrigger>
+              {/* Chat lateral */}
+              <Sheet open={isChatOpen} onOpenChange={setIsChatOpen}>
+                <SheetTrigger asChild>
+                  <Button
+                    variant="outline"
+                    size="lg"
+                    className="rounded-full p-4 h-14 w-14 border-emerald-900/30"
+                  >
+                    <MessageCircle />
+                  </Button>
+                </SheetTrigger>
 
-  <SheetContent side="right" className="w-80 flex flex-col h-full">
-    <SheetHeader>
-      <SheetTitle>Chat</SheetTitle>
-      <SheetClose />
-    </SheetHeader>
+                <SheetContent side="right" className="w-80 flex flex-col h-full">
+                  <SheetHeader>
+                    <SheetTitle>Chat</SheetTitle>
+                    <SheetClose />
+                  </SheetHeader>
 
-    {/* Mensagens */}
-    <div className="flex-1 overflow-y-auto p-4 space-y-2">
-     {messages.map((msg, index) => {
-  const isMe = currentUser && msg.senderId === currentUser.id;
-  return (
-    <p
-      key={index}
-      className={`p-2 rounded max-w-[70%] ${isMe ? "bg-muted/20 self-end" : "bg-emerald-900/20 self-start"}`}
-    >
-      {msg.content}
-    </p>
-  );
-})}
+                  <div className="flex-1 overflow-y-auto p-4 space-y-2">
+                    {messages.map((msg) => {
+                      const isMe = currentUser && msg.senderId === currentUser.id;
+                      return (
+                        <p
+                          key={msg.id}
+                          className={`p-2 rounded max-w-[70%] ${
+                            isMe
+                              ? "bg-muted/20 self-end"
+                              : "bg-emerald-900/20 self-start"
+                          }`}
+                        >
+                          {msg.content}
+                        </p>
+                      );
+                    })}
+                    <div ref={messagesEndRef} />
+                  </div>
 
-      <div ref={messagesEndRef} />
-    </div>
-
-    {/* Input de mensagem */}
-    <div className="p-2 border-t flex space-x-2">
-      <input
-        type="text"
-        placeholder="Digite uma mensagem..."
-        className="flex-1 border rounded p-2"
-        value={newMessage}
-        onChange={(e) => setNewMessage(e.target.value)}
-        onKeyDown={(e) => e.key === "Enter" && handleSendMessage()}
-      />
-      <Button
-        size="sm"
-        onClick={handleSendMessage}
-        disabled={sendingMessage || !newMessage.trim()}
-      >
-        Enviar
-      </Button>
-    </div>
-  </SheetContent>
-</Sheet>
-
+                  <div className="p-2 border-t flex space-x-2">
+                    <input
+                      type="text"
+                      placeholder="Digite uma mensagem..."
+                      className="flex-1 border rounded p-2"
+                      value={newMessage}
+                      onChange={(e) => setNewMessage(e.target.value)}
+                      onKeyDown={(e) => e.key === "Enter" && handleSendMessage()}
+                    />
+                    <Button
+                      size="sm"
+                      onClick={handleSendMessage}
+                      disabled={!newMessage.trim()}
+                    >
+                      Enviar
+                    </Button>
+                  </div>
+                </SheetContent>
+              </Sheet>
 
               <Button
                 variant="destructive"
@@ -359,4 +374,4 @@ const handleSendMessage = async () => {
       </div>
     </>
   );
-} 
+}
