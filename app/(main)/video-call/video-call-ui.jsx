@@ -25,7 +25,7 @@ import {
   SheetTrigger,
 } from "@/components/ui/sheet";
 
-export default function VideoCall({ sessionId, token }) {
+export default function VideoCall({ sessionId, token, chatId }) {
   const [isLoading, setIsLoading] = useState(true);
   const [scriptLoaded, setScriptLoaded] = useState(false);
   const [isConnected, setIsConnected] = useState(false);
