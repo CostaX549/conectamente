@@ -35,6 +35,8 @@ export default function VideoCall({ sessionId, token, chatId }) {
   const [isVideoEnabled, setIsVideoEnabled] = useState(true);
   const [isAudioEnabled, setIsAudioEnabled] = useState(true);
   const [isChatOpen, setIsChatOpen] = useState(false);
+    const [currentUser, setCurrentUser] = useState(null);
+
 const [messages, setMessages] = useState([]);
 const [newMessage, setNewMessage] = useState("");
 const messagesEndRef = useRef(null);
@@ -54,6 +56,15 @@ const { fn: sendMsg, loading: sendingMessage } = useFetch(sendMessage);
 
   loadMessages();
 }, [chatId, fetchMessages]);
+    useEffect(() => {
+    const fetchUser = async () => {
+      const user = await getCurrentUser(); // chama a action
+      setCurrentUser(user);
+    };
+
+    fetchUser();
+  }, []);
+
   useEffect(() => {
   if (!chatId) return;
 
