@@ -1,10 +1,13 @@
 'use client';
 
+import useFetch from "@/hooks/use-fetch";
+import { getChatMessages, sendMessage } from "@/actions/chat";
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import Script from "next/script";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+
 import {
   Loader2,
   Video,
@@ -32,6 +35,39 @@ export default function VideoCall({ sessionId, token, chatId }) {
   const [isVideoEnabled, setIsVideoEnabled] = useState(true);
   const [isAudioEnabled, setIsAudioEnabled] = useState(true);
   const [isChatOpen, setIsChatOpen] = useState(false);
+const [messages, setMessages] = useState([]);
+const [newMessage, setNewMessage] = useState("");
+const messagesEndRef = useRef(null);
+
+const { fn: fetchMessages, loading: loadingMessages } = useFetch(getChatMessages);
+const { fn: sendMsg, loading: sendingMessage } = useFetch(sendMessage);
+  useEffect(() => {
+  if (!chatId) return;
+
+  const loadMessages = async () => {
+    const { messages: msgs } = await fetchMessages(chatId);
+    if (msgs) {
+      setMessages(msgs);
+      messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    }
+  };
+
+  loadMessages();
+}, [chatId, fetchMessages]);
+const handleSendMessage = async () => {
+  if (!newMessage.trim()) return;
+
+  const formData = new FormData();
+  formData.append("chatId", chatId);
+  formData.append("content", newMessage);
+
+  const { message } = await sendMsg(formData);
+  if (message) {
+    setMessages((prev) => [...prev, message]);
+    setNewMessage("");
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }
+};
 
   const sessionRef = useRef(null);
   const publisherRef = useRef(null);
