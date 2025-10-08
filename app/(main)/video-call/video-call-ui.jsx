@@ -1,7 +1,8 @@
 'use client';
 
 import useFetch from "@/hooks/use-fetch";
-import { getChatMessages, sendMessage, getCurrentUser } from "@/actions/chat";
+import { getChatMessages, sendMessage } from "@/actions/chat";
+import { getCurrentUser } from "@/actions/onboarding"
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import Script from "next/script";
