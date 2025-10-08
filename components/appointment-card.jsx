@@ -174,15 +174,18 @@ export function AppointmentCard({
     }
   }, [notesData, refetchAppointments, router]);
 
-  useEffect(() => {
-    if (tokenData?.success) {
-      router.push(
-        `/video-call?sessionId=${tokenData.videoSessionId}&token=${tokenData.token}&appointmentId=${appointment.id}&chatId=${tokenData.chatId}`
-      );
-    } else if (tokenData?.error) {
-      setAction(null);
-    }
-  }, [tokenData, appointment.id, router]);
+useEffect(() => {
+  if (tokenData?.success) {
+    const { videoSessionId, token, chatId } = tokenData;
+    router.replace(
+      `/video-call?sessionId=${videoSessionId}&token=${token}&appointmentId=${appointment.id}&chatId=${chatId}`
+    );
+    router.refresh(); // força o carregamento completo da nova página
+  } else if (tokenData?.error) {
+    setAction(null);
+  }
+}, [tokenData, appointment.id, router]);
+
 
   const isAppointmentActive = () => {
     const now = new Date();
