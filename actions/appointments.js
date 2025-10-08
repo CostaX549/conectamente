@@ -135,6 +135,27 @@ export async function bookAppointment(formData) {
       },
     });
 
+        // 💬 CRIA OU BUSCA CHAT EXISTENTE
+    let chat = await db.chat.findUnique({
+      where: {
+        patientId_doctorId: {
+          patientId: patient.id,
+          doctorId: doctor.id,
+        },
+      },
+    });
+
+    if (!chat) {
+      chat = await db.chat.create({
+        data: {
+          patientId: patient.id,
+          doctorId: doctor.id,
+          isActive: true,
+        },
+      });
+    }
+
+
     revalidatePath("/appointments");
     return { success: true, appointment: appointment };
   } catch (error) {
