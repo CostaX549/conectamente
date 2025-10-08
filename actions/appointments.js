@@ -265,29 +265,12 @@ export async function generateVideoToken(formData) {
         videoSessionToken: token,
       },
     });
-   let chat = await db.chat.findUnique({
-  where: {
-    patientId_doctorId: {
-      patientId: appointment.patientId,
-      doctorId: appointment.doctorId,
-    },
-  },
-});
-
-if (!chat) {
-  chat = await db.chat.create({
-    data: {
-      patientId: appointment.patientId,
-      doctorId: appointment.doctorId,
-      isActive: true,
-    },
-  });
-}
+ 
     return {
       success: true,
       videoSessionId: appointment.videoSessionId,
       token: token,
-      chatId: chat.id
+     
     };
   } catch (error) {
     console.error("Failed to generate video token:", error);
