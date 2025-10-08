@@ -118,8 +118,6 @@ export async function getChatMessages(chatId) {
 
 // ...
 export async function sendMessage(formData) {
-  const user = await getCurrentUser();
-
   const chatId = formData.get("chatId");
   const content = formData.get("content");
   const fileUrl = formData.get("fileUrl") || null;
@@ -128,6 +126,12 @@ export async function sendMessage(formData) {
     throw new Error("Mensagem inválida");
   }
 
+  // Evita chamar getCurrentUser toda vez
+  // Você pode passar userId do frontend ou cachear
+  const { userId } = await auth(); 
+  const user = await db.user.findUnique({ where: { clerkUserId: userId } });
+  if (!user) throw new Error("Usuário não encontrado");
+
   const chat = await db.chat.findUnique({ where: { id: chatId } });
   if (!chat) throw new Error("Chat não encontrado");
 
@@ -135,22 +139,17 @@ export async function sendMessage(formData) {
     throw new Error("Você não faz parte deste chat");
 
   const message = await db.message.create({
-    data: {
-      chatId,
-      senderId: user.id,
-      content,
-      fileUrl,
-    },
-    include: {
-      sender: { select: { id: true, name: true, imageUrl: true } },
-    },
+    data: { chatId, senderId: user.id, content, fileUrl },
+    include: { sender: { select: { id: true, name: true, imageUrl: true } } },
   });
 
-  // Envia evento em tempo real
-  await pusherServer.trigger(`chat-${chatId}`, "new-message", message);
+  // Trigger "fire-and-forget"
+  pusherServer.trigger(`chat-${chatId}`, "new-message", message)
+    .catch(err => console.error("Pusher trigger failed:", err));
 
   return { message };
 }
+
 
 
 /**
