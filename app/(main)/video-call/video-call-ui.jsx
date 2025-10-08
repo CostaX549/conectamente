@@ -7,7 +7,7 @@ import { useRouter } from "next/navigation";
 import Script from "next/script";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-
+import { pusherClient } from "@/lib/pusher";
 import {
   Loader2,
   Video,
@@ -54,6 +54,24 @@ const { fn: sendMsg, loading: sendingMessage } = useFetch(sendMessage);
 
   loadMessages();
 }, [chatId, fetchMessages]);
+  useEffect(() => {
+  if (!chatId) return;
+
+  // Inscreve no canal do chat
+  const channel = pusherClient.subscribe(`chat-${chatId}`);
+
+  // Escuta novas mensagens
+  channel.bind("new-message", (message) => {
+    setMessages((prev) => [...prev, message]);
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  });
+
+  // Limpa ao desmontar
+  return () => {
+    channel.unbind_all();
+    channel.unsubscribe();
+  };
+}, [chatId]);
 const handleSendMessage = async () => {
   if (!newMessage.trim()) return;
 
@@ -68,6 +86,7 @@ const handleSendMessage = async () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }
 };
+
 
   const sessionRef = useRef(null);
   const publisherRef = useRef(null);
@@ -234,36 +253,60 @@ const handleSendMessage = async () => {
               </Button>
 
               {/* Chat button usando Sheet */}
-              <Sheet open={isChatOpen} onOpenChange={setIsChatOpen}>
-                <SheetTrigger asChild>
-                  <Button
-                    variant="outline"
-                    size="lg"
-                    className="rounded-full p-4 h-14 w-14 border-emerald-900/30"
-                  >
-                    <MessageCircle />
-                  </Button>
-                </SheetTrigger>
-                <SheetContent side="right" className="w-80">
-                  <SheetHeader>
-                    <SheetTitle>Chat</SheetTitle>
-                    <SheetClose />
-                  </SheetHeader>
-                  <div className="flex flex-col h-full">
-                    <div className="flex-1 overflow-y-auto p-4 space-y-2">
-                      <p className="bg-emerald-900/20 p-2 rounded">Olá! Esta é uma mensagem de exemplo.</p>
-                      <p className="bg-muted/20 p-2 rounded self-end">Oi, tudo bem?</p>
-                    </div>
-                    <div className="p-2 border-t">
-                      <input
-                        type="text"
-                        placeholder="Digite uma mensagem..."
-                        className="w-full border rounded p-2"
-                      />
-                    </div>
-                  </div>
-                </SheetContent>
-              </Sheet>
+            {/* Chat button usando Sheet */}
+<Sheet open={isChatOpen} onOpenChange={setIsChatOpen}>
+  <SheetTrigger asChild>
+    <Button
+      variant="outline"
+      size="lg"
+      className="rounded-full p-4 h-14 w-14 border-emerald-900/30"
+    >
+      <MessageCircle />
+    </Button>
+  </SheetTrigger>
+
+  <SheetContent side="right" className="w-80 flex flex-col h-full">
+    <SheetHeader>
+      <SheetTitle>Chat</SheetTitle>
+      <SheetClose />
+    </SheetHeader>
+
+    {/* Mensagens */}
+    <div className="flex-1 overflow-y-auto p-4 space-y-2">
+      {messages.map((msg, index) => (
+        <p
+          key={index}
+          className={`p-2 rounded max-w-[70%] ${
+            msg.sender === "me" ? "bg-muted/20 self-end" : "bg-emerald-900/20 self-start"
+          }`}
+        >
+          {msg.content}
+        </p>
+      ))}
+      <div ref={messagesEndRef} />
+    </div>
+
+    {/* Input de mensagem */}
+    <div className="p-2 border-t flex space-x-2">
+      <input
+        type="text"
+        placeholder="Digite uma mensagem..."
+        className="flex-1 border rounded p-2"
+        value={newMessage}
+        onChange={(e) => setNewMessage(e.target.value)}
+        onKeyDown={(e) => e.key === "Enter" && handleSendMessage()}
+      />
+      <Button
+        size="sm"
+        onClick={handleSendMessage}
+        disabled={sendingMessage || !newMessage.trim()}
+      >
+        Enviar
+      </Button>
+    </div>
+  </SheetContent>
+</Sheet>
+
 
               <Button
                 variant="destructive"
