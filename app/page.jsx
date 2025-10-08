@@ -56,31 +56,41 @@ export default function Home() {
       </section>
 
       {/* BLOCO DE FEATURES ALTERNADO */}
-      <section className="py-32 bg-gradient-to-b from-background to-emerald-950/20">
-        <div className="container mx-auto px-6 space-y-20">
-          {features.map((feature, index) => (
-            <div
-              key={index}
-              className={`flex flex-col lg:flex-row items-center gap-16 ${
-                index % 2 === 1 ? "lg:flex-row-reverse" : ""
-              }`}
-            >
-              <div className="lg:w-1/2 space-y-4">
-                <Badge className="bg-emerald-900/40 border-emerald-700/30 text-emerald-400">
-                  Etapa {index + 1}
-                </Badge>
-                <h2 className="text-4xl font-bold">{feature.title}</h2>
-                <p className="text-muted-foreground text-lg">{feature.description}</p>
-              </div>
-              <div className="lg:w-1/2">
-                <div className="bg-emerald-900/20 border border-emerald-800/30 rounded-2xl p-10 flex justify-center items-center h-[280px]">
-                  {feature.icon}
-                </div>
-              </div>
-            </div>
-          ))}
+   {/* BLOCO DE FEATURES ALTERNADO */}
+<section className="py-32 bg-gradient-to-b from-background to-emerald-950/20">
+  <div className="container mx-auto px-6 space-y-20">
+    {features.map((feature, index) => (
+      <div
+        key={index}
+        className={`flex flex-col lg:flex-row items-center gap-12 ${
+          index % 2 === 1 ? "lg:flex-row-reverse" : ""
+        }`}
+      >
+        {/* Texto */}
+        <div className="w-full lg:w-1/2 space-y-4 text-center lg:text-left">
+          <Badge className="bg-emerald-900/40 border-emerald-700/30 text-emerald-400 mx-auto lg:mx-0">
+            Etapa {index + 1}
+          </Badge>
+          <h2 className="text-3xl md:text-4xl font-bold">{feature.title}</h2>
+          <p className="text-muted-foreground text-base md:text-lg max-w-md mx-auto lg:mx-0">
+            {feature.description}
+          </p>
         </div>
-      </section>
+
+        {/* Ícone */}
+        <div className="w-full lg:w-1/2 flex justify-center">
+          <div className="bg-emerald-900/20 border border-emerald-800/30 rounded-2xl p-8 md:p-12 flex justify-center items-center w-full max-w-[300px] h-[220px] md:h-[280px]">
+            {/* aumente o tamanho do ícone */}
+            <div className="scale-150 md:scale-175 text-emerald-400">
+              {feature.icon}
+            </div>
+          </div>
+        </div>
+      </div>
+    ))}
+  </div>
+</section>
+
 
       {/* PRICING + BENEFÍCIOS */}
       <section className="relative py-32">
