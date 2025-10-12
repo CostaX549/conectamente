@@ -188,7 +188,7 @@ export async function sendMessage(formData) {
     }
 
     // Trigger Pusher
-    pusherServer.trigger(`chat-${chatId}`, "new-message", message)
+   await pusherServer.trigger(`chat-${chatId}`, "new-message", message)
       .catch((err) => console.error("Pusher trigger failed:", err));
 
     return { message };
