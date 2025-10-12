@@ -112,12 +112,21 @@ model Message {
   chatId    String
   senderId  String
   content   String?
-  fileUrl   String?
+  files     File[]
   createdAt DateTime @default(now())
   chat      Chat     @relation(fields: [chatId], references: [id], onDelete: Cascade)
   sender    User     @relation("SentMessages", fields: [senderId], references: [id])
 
   @@index([chatId, createdAt])
+}
+
+model File {
+  id        String   @id @default(cuid())
+  message   Message  @relation(fields: [messageId], references: [id])
+  messageId String
+  filename  String
+  url       String
+  mimetype  String
 }
 
 enum UserRole {

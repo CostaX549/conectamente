@@ -4,8 +4,10 @@ import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import Script from "next/script";
 import { toast } from "sonner";
+import Image from "next/image";
 import { getChatMessages, sendMessage } from "@/actions/chat";
 import { getCurrentUser } from "@/actions/onboarding";
+
 import { pusherClient } from "@/lib/pusher";
 import {
   Loader2,
@@ -14,6 +16,7 @@ import {
   Mic,
   MicOff,
   PhoneOff,
+  Paperclip,
   MessageCircle,
   User,
 } from "lucide-react";
@@ -38,6 +41,9 @@ export default function VideoCall({ sessionId, token, chatId }) {
   const [currentUser, setCurrentUser] = useState(null);
   const [messages, setMessages] = useState([]);
   const [newMessage, setNewMessage] = useState("");
+const [newMessageFiles, setNewMessageFiles] = useState([]);
+const [previews, setPreviews] = useState([]);
+
 
   const messagesEndRef = useRef(null);
   const sessionRef = useRef(null);
@@ -95,17 +101,18 @@ useEffect(() => {
 }, [messages]);
   // 🔹 Enviar mensagem
   const handleSendMessage = async () => {
-    if (!newMessage.trim() || !currentUser) return;
+    if (!currentUser) return;
 
     const formData = new FormData();
     formData.append("chatId", chatId);
     formData.append("content", newMessage);
-
+  newMessageFiles.forEach(file => formData.append("files", file));
     setNewMessage("");
 
     try {
       await sendMessage(formData);
-      // Pusher trará a nova mensagem automaticamente
+         setNewMessageFiles([]);
+    setPreviews([]);
     } catch {
       toast.error("Erro ao enviar a mensagem");
     }
@@ -121,6 +128,21 @@ useEffect(() => {
     }
     initializeSession();
   };
+const handleFileUpload = (files) => {
+  if (!files || files.length === 0) return;
+
+  const selectedFiles = Array.from(files);
+  setNewMessageFiles(prev => [...prev, ...selectedFiles]);
+
+  // Prévias apenas de imagens
+  const imagePreviews = selectedFiles
+    .filter(file => file.type.startsWith("image/"))
+    .map(file => URL.createObjectURL(file));
+
+  setPreviews(prev => [...prev, ...imagePreviews]);
+};
+
+
 
   const initializeSession = () => {
     if (!appId || !sessionId || !token) {
@@ -235,7 +257,10 @@ useEffect(() => {
                 <div className="bg-emerald-900/10 px-3 py-2 text-emerald-400 text-sm font-medium">
                   Você
                 </div>
-                <div id="publisher" className="w-full h-[300px] md:h-[400px] bg-muted/30">
+          <div
+  id="publisher"
+    className="w-full aspect-video bg-muted/30"
+>
                   {!scriptLoaded && (
                     <div className="flex items-center justify-center h-full">
                       <div className="bg-muted/20 rounded-full p-8">
@@ -251,7 +276,7 @@ useEffect(() => {
                 <div className="bg-emerald-900/10 px-3 py-2 text-emerald-400 text-sm font-medium">
                   Outro Participante
                 </div>
-                <div id="subscriber" className="w-full h-[300px] md:h-[400px] bg-muted/30">
+                <div id="subscriber"     className="w-full aspect-video bg-muted/30">
                   {(!isConnected || !scriptLoaded) && (
                     <div className="flex items-center justify-center h-full">
                       <div className="bg-muted/20 rounded-full p-8">
@@ -294,7 +319,16 @@ useEffect(() => {
               </Button>
 
               {/* Chat lateral */}
-              <Sheet open={isChatOpen} onOpenChange={setIsChatOpen}>
+              <Sheet open={isChatOpen}  onOpenChange={(open) => {
+    setIsChatOpen(open);
+
+    // Scroll para baixo quando abrir
+    if (open) {
+      setTimeout(() => {
+        messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+      }, 50); // timeout pequeno para esperar o conteúdo montar
+    }
+  }}>
                 <SheetTrigger asChild>
                   <Button
                     variant="outline"
@@ -305,49 +339,167 @@ useEffect(() => {
                   </Button>
                 </SheetTrigger>
 
-                <SheetContent side="right" className="w-80 flex flex-col h-full">
-                  <SheetHeader>
-                    <SheetTitle>Chat</SheetTitle>
-                    <SheetClose />
-                  </SheetHeader>
+               <SheetContent side="right" className="w-96 flex flex-col h-full bg-gradient-to-b from-emerald-950 to-emerald-900 text-white">
+  <SheetHeader className="border-b border-emerald-800 pb-2">
+    <SheetTitle className="text-emerald-300 text-lg">Chat da Consulta</SheetTitle>
+    <SheetClose />
+  </SheetHeader>
 
-                  <div className="flex-1 overflow-y-auto p-4 space-y-2">
-                    {messages.map((msg) => {
-                      const isMe = currentUser && msg.senderId === currentUser.id;
-                      return (
-                        <p
-                          key={msg.id}
-                          className={`p-2 rounded max-w-[70%] ${
-                            isMe
-                              ? "bg-muted/20 self-end"
-                              : "bg-emerald-900/20 self-start"
-                          }`}
-                        >
-                          {msg.content}
-                        </p>
-                      );
-                    })}
-                    <div ref={messagesEndRef} />
-                  </div>
+  {/* MENSAGENS */}
+  <div className="flex-1 overflow-y-auto p-4 space-y-3 scrollbar-thin scrollbar-thumb-emerald-800/40 scrollbar-track-transparent">
+   {messages.map((msg) => {
+  const isMe = currentUser && msg.senderId === currentUser.id;
 
-                  <div className="p-2 border-t flex space-x-2">
-                    <input
-                      type="text"
-                      placeholder="Digite uma mensagem..."
-                      className="flex-1 border rounded p-2"
-                      value={newMessage}
-                      onChange={(e) => setNewMessage(e.target.value)}
-                      onKeyDown={(e) => e.key === "Enter" && handleSendMessage()}
-                    />
-                    <Button
-                      size="sm"
-                      onClick={handleSendMessage}
-                      disabled={!newMessage.trim()}
-                    >
-                      Enviar
-                    </Button>
-                  </div>
-                </SheetContent>
+  return (
+    <div
+      key={msg.id}
+      className={`flex ${isMe ? "justify-end" : "justify-start"}`}
+    >
+      <div
+        className={`relative max-w-[75%] px-4 py-2 rounded-2xl text-sm shadow-md ${
+          isMe
+            ? "bg-emerald-600 text-white rounded-br-none"
+            : "bg-emerald-800/40 text-emerald-50 rounded-bl-none"
+        }`}
+      >
+        {/* Texto da mensagem */}
+        {msg.content && <p>{msg.content}</p>}
+
+        {/* Arquivos enviados */}
+        {msg.files && msg.files.length > 0 && (
+          <div className="mt-2 flex flex-wrap gap-2">
+         {msg.files.map((file) => {
+  if (file.mimetype.startsWith("image/")) {
+    return (
+      <Image
+        key={file.id}
+        src={file.url} // precisa ser relativo a public/ ou URL externa configurada
+        alt={file.filename}
+        width={100}
+        height={100}
+        className="object-cover rounded-md border border-emerald-800"
+      />
+    );
+  } else {
+    return (
+      <a
+        key={file.id}
+        href={file.url}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="inline-block px-2 py-1 text-xs text-emerald-100 bg-emerald-800/40 rounded-md border border-emerald-700"
+      >
+        {file.filename}
+      </a>
+    );
+  }
+})}
+
+          </div>
+        )}
+
+       
+      </div>
+    </div>
+  );
+})}
+
+    <div ref={messagesEndRef} />
+  </div>
+
+  {/* INPUT */}
+
+
+{/* INPUT E PREVIEW */}
+<div className="p-3 border-t border-emerald-800 bg-emerald-950/60 flex flex-col space-y-2">
+ <div className="flex flex-wrap gap-2 mb-2">
+  {newMessageFiles.map((file, index) => {
+    if (file.type.startsWith("image/")) {
+      return (
+        <div key={index} className="relative w-16 h-16">
+          <img
+            src={previews[index]}
+            alt={file.name}
+            className="h-16 w-16 object-cover rounded-md border border-emerald-800"
+          />
+          <button
+            type="button"
+            onClick={() => {
+              setNewMessageFiles(prev => prev.filter((_, i) => i !== index));
+              setPreviews(prev => prev.filter((_, i) => i !== index));
+            }}
+            className="absolute -top-2 -right-2 bg-red-600 hover:bg-red-700 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs"
+          >
+            ×
+          </button>
+        </div>
+      );
+    } else {
+      return (
+        <div
+          key={index}
+          className="relative flex items-center justify-center h-16 w-16 bg-emerald-800/40 text-white rounded-md border border-emerald-800 p-2 text-xs"
+        >
+          <span className="truncate">{file.name}</span>
+          <button
+            type="button"
+            onClick={() => {
+              setNewMessageFiles(prev => prev.filter((_, i) => i !== index));
+              setPreviews(prev => prev.filter((_, i) => i !== index));
+            }}
+            className="absolute -top-2 -right-2 bg-red-600 hover:bg-red-700 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs"
+          >
+            ×
+          </button>
+        </div>
+      );
+    }
+  })}
+</div>
+
+
+  {/* Campo de digitar mensagem + botões */}
+  <div className="flex space-x-2 items-center">
+    <input
+      type="text"
+      placeholder="Digite uma mensagem..."
+      className="flex-1 bg-emerald-900/40 border border-emerald-800 rounded-full px-4 py-2 text-sm text-white placeholder-emerald-400 focus:outline-none focus:ring-1 focus:ring-emerald-600 h-10"
+      value={newMessage}
+      onChange={(e) => setNewMessage(e.target.value)}
+      onKeyDown={(e) => e.key === "Enter" && handleSendMessage()}
+    />
+
+    {/* Botão de anexar arquivo */}
+    <input
+      type="file"
+      id="fileInput"
+      className="hidden"
+      multiple
+      onChange={(e) => handleFileUpload(e.target.files)}
+    />
+    <label
+      htmlFor="fileInput"
+      className="cursor-pointer bg-emerald-600 hover:bg-emerald-700 text-white rounded-full p-2 h-10 w-10 flex items-center justify-center"
+    >
+      <Paperclip className="h-5 w-5" />
+    </label>
+
+    {/* Botão enviar */}
+    <Button
+      size="sm"
+      onClick={handleSendMessage}
+      disabled={!newMessage.trim() && !newMessageFiles}
+      className="bg-emerald-600 hover:bg-emerald-700 text-white rounded-full px-4 h-10 flex items-center justify-center"
+    >
+      Enviar
+    </Button>
+  </div>
+</div>
+
+
+
+</SheetContent>
+
               </Sheet>
 
               <Button

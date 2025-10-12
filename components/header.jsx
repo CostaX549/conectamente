@@ -4,7 +4,7 @@ import Link from 'next/link'
 import React from 'react'
 import { Button } from './ui/button'
 import { checkUser } from '@/lib/checkUser'
-import { Calendar, CreditCard, ShieldCheck, Stethoscope, User } from 'lucide-react'
+import { Calendar, CreditCard, ShieldCheck, Stethoscope, User, MessageCircle } from 'lucide-react'
 import { checkAndAllocateCredits } from '@/actions/credits'
 import { Badge } from './ui/badge'
 
@@ -14,7 +14,7 @@ const Header = async () => {
   await checkAndAllocateCredits(user)
   }
   return (
-    <header className="fixed top-0  w-full border-b bg-background/80 backdrop-blur-md z-10 supports-[backdrop-filter]:bg-background/60">
+    <header className="fixed top-0  w-full border-b bg-background/80 backdrop-blur-md z-50 supports-[backdrop-filter]:bg-background/60">
         <nav className="container mx-auto px-4 h-16 flex items-center justify-between">
             <Link href="/">
             <Image
@@ -43,6 +43,7 @@ const Header = async () => {
               </Link>
             )}
                      {user?.role === "DOCTOR" && (
+                           <div className="flex gap-2">
               <Link href="/doctor">
                 <Button
                   variant="outline"
@@ -55,8 +56,19 @@ const Header = async () => {
                   <Stethoscope className="h-4 w-4" />
                 </Button>
               </Link>
+              <Link href="/chat">
+  <Button variant="outline" className="hidden md:inline-flex items-center gap-2">
+    <MessageCircle className="h-4 w-4" />
+    Chat
+  </Button>
+  <Button variant="ghost" className="md:hidden w-10 h-10 p-0">
+    <MessageCircle className="h-4 w-4" />
+  </Button>
+</Link>
+</div>
             )}
                 {user?.role === "PATIENT" && (
+                  <div className="flex gap-2">
               <Link href="/appointments">
                 <Button
                   variant="outline"
@@ -69,6 +81,17 @@ const Header = async () => {
                   <Calendar className="h-4 w-4" />
                 </Button>
               </Link>
+              {/* Botão de Chat */}
+<Link href="/chat">
+  <Button variant="outline" className="hidden md:inline-flex items-center gap-2">
+    <MessageCircle className="h-4 w-4" />
+    Chat
+  </Button>
+  <Button variant="ghost" className="md:hidden w-10 h-10 p-0">
+    <MessageCircle className="h-4 w-4" />
+  </Button>
+</Link>
+</div>
             )}
                 {user?.role === "UNASSIGNED" && (
                   <Link href="/onboarding">
@@ -97,7 +120,7 @@ const Header = async () => {
             <span className="hidden md:inline">Créditos</span>
           </>
         ) : (
-          <>Pricing</>
+          <>Preços</>
         )}
       </span>
     </Badge>

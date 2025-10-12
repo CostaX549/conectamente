@@ -278,7 +278,7 @@ export function AppointmentCard({
 
       {/* Diálogo de detalhes da consulta */}
       <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent className="max-w-2xl">
+        <DialogContent className="w-full max-w-full  mx-auto overflow-x-auto">
           <DialogHeader>
             <DialogTitle className="text-xl font-bold text-white">
               Detalhes da Consulta

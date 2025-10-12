@@ -99,9 +99,16 @@ export async function getUserChats() {
 export async function getChatMessages(chatId) {
   const user = await getCurrentUser();
 
-  const chat = await db.chat.findUnique({
+   const chat = await db.chat.findUnique({
     where: { id: chatId },
-    include: { messages: { orderBy: { createdAt: "asc" } } },
+    include: {
+      messages: {
+        orderBy: { createdAt: "asc" },
+        include: {
+          files: true, // ✅ inclui os arquivos relacionados à mensagem
+        },
+      },
+    },
   });
 
   if (!chat) throw new Error("Chat não encontrado");
@@ -117,38 +124,81 @@ export async function getChatMessages(chatId) {
 
 
 // ...
+
+import path from "path";
+import fs from "fs/promises";
+
 export async function sendMessage(formData) {
-  const chatId = formData.get("chatId");
-  const content = formData.get("content");
-  const fileUrl = formData.get("fileUrl") || null;
+  try {
+    const chatId = formData.get("chatId");
+    const content = formData.get("content");
 
-  if (!chatId || (!content && !fileUrl)) {
-    throw new Error("Mensagem inválida");
+    if (!chatId || (!content && !formData.has("files"))) {
+      throw new Error("Mensagem inválida");
+    }
+
+    const { userId } = await auth();
+    const user = await db.user.findUnique({ where: { clerkUserId: userId } });
+    if (!user) throw new Error("Usuário não encontrado");
+
+    const chat = await db.chat.findUnique({ where: { id: chatId } });
+    if (!chat) throw new Error("Chat não encontrado");
+
+    if (chat.patientId !== user.id && chat.doctorId !== user.id)
+      throw new Error("Você não faz parte deste chat");
+
+    // Criar mensagem
+    const message = await db.message.create({
+      data: {
+        chatId,
+        senderId: user.id,
+        content: content || null,
+      },
+      include: {
+        sender: { select: { id: true, name: true, imageUrl: true } },
+      },
+    });
+
+    // Salvar arquivos (se houver)
+    const files = formData.getAll("files");
+    if (files.length > 0) {
+      const uploadsDir = path.join(process.cwd(), "public", "uploads");
+      await fs.mkdir(uploadsDir, { recursive: true }); // cria a pasta se não existir
+
+      const filesData = await Promise.all(
+        files.map(async (file) => {
+          const filename = `${Date.now()}-${file.name}`;
+          const filepath = path.join(uploadsDir, filename);
+
+          const buffer = Buffer.from(await file.arrayBuffer());
+          await fs.writeFile(filepath, buffer);
+
+          return db.file.create({
+            data: {
+              messageId: message.id,
+              filename: file.name,
+              url: `/uploads/${filename}`, // URL pública continua igual
+              mimetype: file.type,
+            },
+          });
+        })
+      );
+
+      message.files = filesData;
+    }
+
+    // Trigger Pusher
+    pusherServer.trigger(`chat-${chatId}`, "new-message", message)
+      .catch((err) => console.error("Pusher trigger failed:", err));
+
+    return { message };
+  } catch (err) {
+    console.error("Erro ao enviar mensagem:", err);
+    throw err;
   }
-
-  // Evita chamar getCurrentUser toda vez
-  // Você pode passar userId do frontend ou cachear
-  const { userId } = await auth(); 
-  const user = await db.user.findUnique({ where: { clerkUserId: userId } });
-  if (!user) throw new Error("Usuário não encontrado");
-
-  const chat = await db.chat.findUnique({ where: { id: chatId } });
-  if (!chat) throw new Error("Chat não encontrado");
-
-  if (chat.patientId !== user.id && chat.doctorId !== user.id)
-    throw new Error("Você não faz parte deste chat");
-
-  const message = await db.message.create({
-    data: { chatId, senderId: user.id, content, fileUrl },
-    include: { sender: { select: { id: true, name: true, imageUrl: true } } },
-  });
-
-  // Trigger "fire-and-forget"
-  pusherServer.trigger(`chat-${chatId}`, "new-message", message)
-    .catch(err => console.error("Pusher trigger failed:", err));
-
-  return { message };
 }
+
+
 
 
 

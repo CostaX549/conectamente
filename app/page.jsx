@@ -72,7 +72,7 @@ export default function Home() {
                 <h2 className="text-4xl font-bold">{feature.title}</h2>
                 <p className="text-muted-foreground text-lg">{feature.description}</p>
               </div>
-              <div className="lg:w-1/2">
+              <div className="w-full lg:w-1/2">
                 <div className="bg-emerald-900/20 border border-emerald-800/30 rounded-2xl p-10 flex justify-center items-center h-[280px]">
                   {feature.icon}
                 </div>
@@ -119,9 +119,9 @@ export default function Home() {
 
             <div className="rounded-2xl overflow-hidden">
               <Image
-                src="/psicologo2.jpg"
+                src="/mulher-deprimida-tendo-sessao-de-psicoterapia-no-consultorio-medico.jpg"
                 alt="Sessão de vídeo chamada"
-                width={600}
+                width={800}
                 height={400}
                 className="object-cover w-full h-full"
               />
