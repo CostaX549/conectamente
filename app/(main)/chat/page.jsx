@@ -63,7 +63,26 @@ export default function MobileChat() {
     if (!activeChatId) return;
 
     const channel = pusherClient.subscribe(`chat-${activeChatId}`);
-    const handleNewMessage = (message) => setMessages(prev => [...prev, message]);
+ const handleNewMessage = (message) => {
+  setMessages((prev) => {
+    // Se a mensagem já existe pelo id → ignora
+    const exists = prev.some((m) => m.id === message.id);
+    if (exists) return prev;
+   const normalizeContent = (content) =>
+      (content ?? "").trim();
+
+    const withoutTemp = prev.filter(
+      (m) =>
+        !(
+          m.pending &&
+          m.senderId === message.senderId &&
+          normalizeContent(m.content) === normalizeContent(message.content)
+        )
+    );
+
+    return [...withoutTemp, message];
+  });
+};
 
     channel.bind("new-message", handleNewMessage);
     return () => {
@@ -79,16 +98,34 @@ export default function MobileChat() {
 
   const handleSendMessage = async () => {
     if (!currentUser || !activeChatId) return;
+     const tempId = `temp-${Date.now()}`;
+  const tempMessage = {
+    id: tempId,
+    senderId: currentUser.id,
+    content: newMessage,
+   files: newMessageFiles.map((file, i) => ({
+    id: `temp-file-${i}`,
+    url: file.type.startsWith("image/")
+      ? previews[i] || URL.createObjectURL(file)
+      : "", // ainda sem preview visual
+    filename: file.name,
+    mimetype: file.type,
+  })),
+    pending: true,
+  };
+
+  // Mostra imediatamente no chat
+  setMessages(prev => [...prev, tempMessage]);
     const formData = new FormData();
     formData.append("chatId", activeChatId);
     formData.append("content", newMessage);
     newMessageFiles.forEach(file => formData.append("files", file));
     setNewMessage("");
-
+     setNewMessageFiles([]);
+      setPreviews([]);
     try {
       await sendMessage(formData);
-      setNewMessageFiles([]);
-      setPreviews([]);
+ 
     } catch {
       toast.error("Erro ao enviar mensagem");
     }
@@ -247,7 +284,7 @@ export default function MobileChat() {
                   setNewMessageFiles(prev => prev.filter((_, i) => i !== index));
                   setPreviews(prev => prev.filter((_, i) => i !== index));
                 }}
-                className="absolute -top-2 -right-2 bg-red-600 hover:bg-red-700 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs"
+                 className="absolute top-1 right-1 bg-red-600 hover:bg-red-700 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs shadow-md"
               >×</button>
             </div>
           ))}
