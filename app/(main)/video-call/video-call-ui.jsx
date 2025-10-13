@@ -84,10 +84,27 @@ const [previews, setPreviews] = useState([]);
     if (!chatId) return;
 
     const channel = pusherClient.subscribe(`chat-${chatId}`);
-    channel.bind("new-message", (message) => {
-      setMessages((prev) => [...prev, message]);
-     
-    });
+     const handleNewMessage = (message) => {
+  setMessages((prev) => {
+    // Se a mensagem já existe pelo id → ignora
+    const exists = prev.some((m) => m.id === message.id);
+    if (exists) return prev;
+   const normalizeContent = (content) =>
+      (content ?? "").trim();
+
+    const withoutTemp = prev.filter(
+      (m) =>
+        !(
+          m.pending &&
+          m.senderId === message.senderId &&
+          normalizeContent(m.content) === normalizeContent(message.content)
+        )
+    );
+
+    return [...withoutTemp, message];
+  });
+};
+    channel.bind("new-message", handleNewMessage);
 
     return () => {
       channel.unbind_all();
@@ -102,17 +119,34 @@ useEffect(() => {
   // 🔹 Enviar mensagem
   const handleSendMessage = async () => {
     if (!currentUser) return;
+    const tempId = `temp-${Date.now()}`;
+  const tempMessage = {
+    id: tempId,
+    senderId: currentUser.id,
+    content: newMessage,
+   files: newMessageFiles.map((file, i) => ({
+    id: `temp-file-${i}`,
+    url: file.type.startsWith("image/")
+      ? previews[i] || URL.createObjectURL(file)
+      : "", // ainda sem preview visual
+    filename: file.name,
+    mimetype: file.type,
+  })),
+    pending: true,
+  };
 
+  // Mostra imediatamente no chat
+  setMessages(prev => [...prev, tempMessage]);
     const formData = new FormData();
     formData.append("chatId", chatId);
     formData.append("content", newMessage);
   newMessageFiles.forEach(file => formData.append("files", file));
     setNewMessage("");
-
+ setNewMessageFiles([]);
+    setPreviews([]);
     try {
       await sendMessage(formData);
-         setNewMessageFiles([]);
-    setPreviews([]);
+        
     } catch {
       toast.error("Erro ao enviar a mensagem");
     }
