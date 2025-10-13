@@ -146,7 +146,7 @@ export default function MobileChat() {
 
   if (isLoading) {
     return (
-      <div className="flex items-center rounded-xl justify-center h-screen bg-emerald-950 text-white">
+      <div className="flex h-[85vh] items-center rounded-xl justify-center  bg-[#050505] text-white">
         <Loader2 className="h-12 w-12 text-emerald-400 animate-spin" />
       </div>
     );
@@ -156,7 +156,7 @@ export default function MobileChat() {
   if (!activeChatId) {
     // Lista de chats
     return (
-      <div className="h-screen bg-emerald-950 text-white flex flex-col">
+      <div className="h-[85vh] bg-[#050505] text-white flex flex-col">
         <div className="p-4 font-bold text-lg border-b border-emerald-800 bg-emerald-900/30">Conversas</div>
         <div className="flex-1 overflow-y-auto">
           {chats.map(chat => {
