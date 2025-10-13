@@ -20,7 +20,7 @@ export default function DoctorChatPainel() {
   const [isLoading, setIsLoading] = useState(true);
   const [isMessagesLoading, setIsMessagesLoading] = useState(false);
 
-  const messagesEndRef = useRef(null);
+  const messagesContainerRef = useRef(null);
 
   // 🔹 Buscar usuário e chats
   useEffect(() => {
@@ -85,8 +85,14 @@ export default function DoctorChatPainel() {
     };
   }, [activeChatId]);
 
+  // 🔹 Scroll automático apenas na área de mensagens
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    if (messagesContainerRef.current) {
+      messagesContainerRef.current.scrollTo({
+        top: messagesContainerRef.current.scrollHeight,
+        behavior: "smooth",
+      });
+    }
   }, [messages]);
 
   const handleSendMessage = async () => {
@@ -98,8 +104,7 @@ export default function DoctorChatPainel() {
       content: newMessage,
       files: newMessageFiles.map((file, i) => ({
         id: `temp-file-${i}`,
-    url: file.type.startsWith("image/") ? previews[i] : null,
-
+        url: file.type.startsWith("image/") ? previews[i] : null,
         filename: file.name,
         mimetype: file.type,
       })),
@@ -188,7 +193,7 @@ export default function DoctorChatPainel() {
       </aside>
 
       {/* Área principal */}
-      <main className="flex-1 flex flex-col">
+      <main className="flex-1 flex flex-col bg-[#0b0b0b]">
         {!activeChat ? (
           <div className="flex items-center justify-center flex-1 text-gray-400">
             Selecione um chat para começar
@@ -196,7 +201,7 @@ export default function DoctorChatPainel() {
         ) : (
           <>
             {/* Cabeçalho */}
-            <div className="p-4 border-b border-emerald-900/40 bg-[#0b0b0b] flex items-center">
+            <div className="p-4 border-b border-emerald-900/40 flex items-center shrink-0">
               <Image
                 src={
                   activeChat.doctor.id === currentUser?.id
@@ -221,8 +226,11 @@ export default function DoctorChatPainel() {
               </div>
             </div>
 
-            {/* Mensagens */}
-            <div className="flex-1 overflow-y-auto p-6 space-y-3 bg-gradient-to-b from-[#0b0b0b] to-[#08100b]">
+            {/* 🔹 Área de mensagens com scroll independente */}
+            <div
+              ref={messagesContainerRef}
+              className="flex-1 overflow-y-auto px-6 py-4 space-y-3 bg-gradient-to-b from-[#0b0b0b] to-[#08100b]"
+            >
               {isMessagesLoading ? (
                 <div className="flex justify-center items-center py-10">
                   <Loader2 className="h-8 w-8 text-emerald-400 animate-spin" />
@@ -240,104 +248,47 @@ export default function DoctorChatPainel() {
                         }`}
                       >
                         {msg.content}
-                        {msg.files?.length > 0 && (
-                          <div className="mt-2 flex flex-wrap gap-2">
-                            {msg.files.map((file) =>
-                              file.mimetype.startsWith("image/") ? (
-                                <Image
-                                  key={file.id}
-                                  src={file.url}
-                                  alt={file.filename}
-                                  width={100}
-                                  height={100}
-                                  className="rounded-lg border border-emerald-800"
-                                />
-                              ) : (
-                                <a
-                                  key={file.id}
-                                  href={file.url}
-                                  target="_blank"
-                                  className="text-xs text-emerald-300 underline"
-                                >
-                                  {file.filename}
-                                </a>
-                              )
-                            )}
-                          </div>
-                        )}
                       </div>
                     </div>
                   );
                 })
               )}
-              <div ref={messagesEndRef} />
             </div>
 
-            {/* Input */}
-            {/* Input */}
-<div className="p-4 border-t border-emerald-900/40 bg-[#0b0b0b] flex flex-col gap-3">
-  {/* 🔹 Pré-visualizações */}
-  {previews.length > 0 && (
-    <div className="flex flex-wrap gap-2">
-      {previews.map((src, i) => (
-        <div key={i} className="relative group">
-          <Image
-            src={src}
-            alt={`preview-${i}`}
-            width={80}
-            height={80}
-            className="rounded-lg border border-emerald-800 object-cover"
-          />
-          {/* Botão de remover */}
-          <button
-            type="button"
-            onClick={() => {
-              setPreviews((prev) => prev.filter((_, idx) => idx !== i));
-              setNewMessageFiles((prev) => prev.filter((_, idx) => idx !== i));
-            }}
-            className="absolute -top-1 -right-1 bg-emerald-700 hover:bg-emerald-600 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center opacity-0 group-hover:opacity-100 transition"
-          >
-            ✕
-          </button>
-        </div>
-      ))}
-    </div>
-  )}
-
-  {/* 🔹 Campo de mensagem + botões */}
-  <div className="flex items-center gap-3">
-    <input
-      type="text"
-      placeholder="Digite uma mensagem..."
-      className="flex-1 bg-emerald-950/40 border border-emerald-800 rounded-xl px-4 py-2 text-sm text-white focus:outline-none focus:ring-1 focus:ring-emerald-600"
-      value={newMessage}
-      onChange={(e) => setNewMessage(e.target.value)}
-      onKeyDown={(e) => e.key === "Enter" && handleSendMessage()}
-    />
-    <input
-      type="file"
-      id="fileInput"
-      className="hidden"
-      multiple
-      onChange={(e) => handleFileUpload(e.target.files)}
-    />
-    <label
-      htmlFor="fileInput"
-      className="cursor-pointer bg-emerald-700 hover:bg-emerald-600 p-2 rounded-xl"
-    >
-      <Paperclip className="w-4 h-4" />
-    </label>
-    <Button
-      size="sm"
-      onClick={handleSendMessage}
-      disabled={!newMessage.trim() && !newMessageFiles.length}
-      className="bg-emerald-700 hover:bg-emerald-600 rounded-xl"
-    >
-      <Send className="w-4 h-4" />
-    </Button>
-  </div>
-</div>
-
+            {/* Input fixo */}
+            <div className="p-4 border-t border-emerald-900/40 bg-[#0b0b0b] shrink-0 flex flex-col gap-3">
+              <div className="flex items-center gap-3">
+                <input
+                  type="text"
+                  placeholder="Digite uma mensagem..."
+                  className="flex-1 bg-emerald-950/40 border border-emerald-800 rounded-xl px-4 py-2 text-sm text-white focus:outline-none focus:ring-1 focus:ring-emerald-600"
+                  value={newMessage}
+                  onChange={(e) => setNewMessage(e.target.value)}
+                  onKeyDown={(e) => e.key === "Enter" && handleSendMessage()}
+                />
+                <input
+                  type="file"
+                  id="fileInput"
+                  className="hidden"
+                  multiple
+                  onChange={(e) => handleFileUpload(e.target.files)}
+                />
+                <label
+                  htmlFor="fileInput"
+                  className="cursor-pointer bg-emerald-700 hover:bg-emerald-600 p-2 rounded-xl"
+                >
+                  <Paperclip className="w-4 h-4" />
+                </label>
+                <Button
+                  size="sm"
+                  onClick={handleSendMessage}
+                  disabled={!newMessage.trim() && !newMessageFiles.length}
+                  className="bg-emerald-700 hover:bg-emerald-600 rounded-xl"
+                >
+                  <Send className="w-4 h-4" />
+                </Button>
+              </div>
+            </div>
           </>
         )}
       </main>
