@@ -318,15 +318,15 @@ export default function DoctorChatPainel() {
                                 );
                               } else {
                                 return (
-                                  <a
-                                    key={file.id}
-                                    href={file.url}
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    className="inline-block px-2 py-1 text-xs text-emerald-100 bg-emerald-800/40 rounded-md border border-emerald-700"
-                                  >
-                                    {file.filename}
-                                  </a>
+                                 <a
+  key={file.id}
+  href={`${file.url}?fl_attachment`} // adiciona attachment sempre
+  target="_blank"
+  rel="noopener noreferrer"
+  className="inline-block px-2 py-1 text-xs text-emerald-100 bg-emerald-800/40 rounded-md border border-emerald-700"
+>
+  {file.filename}
+</a>
                                 );
                               }
                             })}
