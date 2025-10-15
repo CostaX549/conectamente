@@ -163,7 +163,7 @@ export async function sendMessage(formData) {
     const files = formData.getAll("files");
     if (files.length > 0) {
       const uploadsDir = path.join(process.cwd(), "public", "uploads");
-      await fs.mkdir(uploadsDir, { recursive: true }); // cria a pasta se não existir
+     
 
       const filesData = await Promise.all(
         files.map(async (file) => {
