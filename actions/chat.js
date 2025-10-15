@@ -4,7 +4,7 @@ import { db } from "@/lib/prisma";
 import { auth } from "@clerk/nextjs/server";
 import { revalidatePath } from "next/cache";
 import { pusherServer } from "@/lib/pusher";
-
+import { uploadToCloudinary } from "@/lib/cloudinary";
 /**
  * Verifica se o usuário está autenticado
  */
@@ -125,8 +125,7 @@ export async function getChatMessages(chatId) {
 
 // ...
 
-import path from "path";
-import fs from "fs/promises";
+
 
 export async function sendMessage(formData) {
   try {
@@ -160,31 +159,23 @@ export async function sendMessage(formData) {
     });
 
     // Salvar arquivos (se houver)
-    const files = formData.getAll("files");
+  const files = formData.getAll("files");
     if (files.length > 0) {
-      const uploadsDir = path.join(process.cwd(), "public", "uploads");
-     
-  await fs.mkdir(uploadsDir, { recursive: true });
-      const filesData = await Promise.all(
+      const uploadedFiles = await Promise.all(
         files.map(async (file) => {
-          const filename = `${Date.now()}-${file.name}`;
-          const filepath = path.join(uploadsDir, filename);
-
-          const buffer = Buffer.from(await file.arrayBuffer());
-          await fs.writeFile(filepath, buffer);
-
+          const uploaded = await uploadToCloudinary(file);
           return db.file.create({
             data: {
               messageId: message.id,
               filename: file.name,
-              url: `/uploads/${filename}`, // URL pública continua igual
+              url: uploaded.url,
               mimetype: file.type,
             },
           });
         })
       );
 
-      message.files = filesData;
+      message.files = uploadedFiles;
     }
 
     // Trigger Pusher

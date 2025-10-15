@@ -381,7 +381,10 @@ const handleFileUpload = (files) => {
                   </Button>
                 </SheetTrigger>
 
-               <SheetContent side="right" className="w-96 flex flex-col h-full bg-gradient-to-b from-emerald-950 to-emerald-900 text-white">
+               <SheetContent
+  side="right"
+  className="w-96 flex flex-col h-full bg-gradient-to-b from-emerald-950 to-emerald-900 text-white"
+>
   <SheetHeader className="border-b border-emerald-800 pb-2">
     <SheetTitle className="text-emerald-300 text-lg">Chat da Consulta</SheetTitle>
     <SheetClose />
@@ -389,158 +392,177 @@ const handleFileUpload = (files) => {
 
   {/* MENSAGENS */}
   <div className="flex-1 overflow-y-auto p-4 space-y-3 scrollbar-thin scrollbar-thumb-emerald-800/40 scrollbar-track-transparent">
-   {messages.map((msg) => {
-  const isMe = currentUser && msg.senderId === currentUser.id;
+    {messages.map((msg) => {
+      const isMe = currentUser && msg.senderId === currentUser.id;
 
-  return (
-    <div
-      key={msg.id}
-      className={`flex ${isMe ? "justify-end" : "justify-start"}`}
-    >
-      <div
-        className={`relative max-w-[75%] px-4 py-2 rounded-2xl text-sm shadow-md ${
-          isMe
-            ? "bg-emerald-600 text-white rounded-br-none"
-            : "bg-emerald-800/40 text-emerald-50 rounded-bl-none"
-        }`}
-      >
-        {/* Texto da mensagem */}
-        {msg.content && <p>{msg.content}</p>}
+      return (
+        <div
+          key={msg.id}
+          className={`flex ${isMe ? "justify-end" : "justify-start"}`}
+        >
+          <div
+            className={`relative max-w-[75%] px-4 py-2 rounded-2xl text-sm shadow-md ${
+              isMe
+                ? "bg-emerald-600 text-white rounded-br-none"
+                : "bg-emerald-800/40 text-emerald-50 rounded-bl-none"
+            }`}
+          >
+            {/* Texto da mensagem */}
+            {msg.content && <p>{msg.content}</p>}
 
-        {/* Arquivos enviados */}
-        {msg.files && msg.files.length > 0 && (
-          <div className="mt-2 flex flex-wrap gap-2">
-         {msg.files.map((file) => {
-  if (file.mimetype.startsWith("image/")) {
-    return (
-      <Image
-        key={file.id}
-        src={file.url} // precisa ser relativo a public/ ou URL externa configurada
-        alt={file.filename}
-        width={100}
-        height={100}
-        className="object-cover rounded-md border border-emerald-800"
-      />
-    );
-  } else {
-    return (
-      <a
-        key={file.id}
-        href={file.url}
-        target="_blank"
-        rel="noopener noreferrer"
-        className="inline-block px-2 py-1 text-xs text-emerald-100 bg-emerald-800/40 rounded-md border border-emerald-700"
-      >
-        {file.filename}
-      </a>
-    );
-  }
-})}
-
+            {/* Arquivos enviados */}
+            {msg.files && msg.files.length > 0 && (
+              <div className="mt-2 flex flex-wrap gap-2">
+                {msg.files.map((file) => {
+                  if (file.mimetype.startsWith("image/")) {
+                    return (
+                      <Image
+                        key={file.id}
+                        src={file.url}
+                        alt={file.filename}
+                        width={120}
+                        height={120}
+                        className="object-cover rounded-md border border-emerald-800"
+                      />
+                    );
+                  } else if (file.mimetype.startsWith("video/")) {
+                    return (
+                      <video
+                        key={file.id}
+                        src={file.url}
+                        controls
+                        className="w-48 rounded-md border border-emerald-800"
+                      />
+                    );
+                  } else {
+                    return (
+                      <a
+                        key={file.id}
+                        href={file.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-block px-2 py-1 text-xs text-emerald-100 bg-emerald-800/40 rounded-md border border-emerald-700"
+                      >
+                        {file.filename}
+                      </a>
+                    );
+                  }
+                })}
+              </div>
+            )}
           </div>
-        )}
-
-       
-      </div>
-    </div>
-  );
-})}
-
+        </div>
+      );
+    })}
     <div ref={messagesEndRef} />
   </div>
 
-  {/* INPUT */}
+  {/* INPUT E PREVIEW */}
+  <div className="p-3 border-t border-emerald-800 bg-emerald-950/60 flex flex-col space-y-2">
+    {/* PRÉ-VISUALIZAÇÃO DE ARQUIVOS */}
+    <div className="flex flex-wrap gap-2 mb-2">
+      {newMessageFiles.map((file, index) => {
+        if (file.type.startsWith("image/")) {
+          return (
+            <div key={index} className="relative w-16 h-16">
+              <img
+                src={previews[index]}
+                alt={file.name}
+                className="h-16 w-16 object-cover rounded-md border border-emerald-800"
+              />
+              <button
+                type="button"
+                onClick={() => {
+                  setNewMessageFiles((prev) => prev.filter((_, i) => i !== index));
+                  setPreviews((prev) => prev.filter((_, i) => i !== index));
+                }}
+                className="absolute -top-2 -right-2 bg-red-600 hover:bg-red-700 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs"
+              >
+                ×
+              </button>
+            </div>
+          );
+        } else if (file.type.startsWith("video/")) {
+          return (
+            <div key={index} className="relative w-20 h-20">
+              <video
+                src={URL.createObjectURL(file)}
+                className="rounded-md border border-emerald-800 object-cover w-20 h-20"
+                muted
+                controls
+              />
+              <button
+                type="button"
+                onClick={() => {
+                  setNewMessageFiles((prev) => prev.filter((_, i) => i !== index));
+                  setPreviews((prev) => prev.filter((_, i) => i !== index));
+                }}
+                className="absolute -top-2 -right-2 bg-red-600 hover:bg-red-700 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs"
+              >
+                ×
+              </button>
+            </div>
+          );
+        } else {
+          return (
+            <div
+              key={index}
+              className="relative flex items-center justify-center h-16 w-16 bg-emerald-800/40 text-white rounded-md border border-emerald-800 p-2 text-xs"
+            >
+              <span className="truncate">{file.name}</span>
+              <button
+                type="button"
+                onClick={() => {
+                  setNewMessageFiles((prev) => prev.filter((_, i) => i !== index));
+                  setPreviews((prev) => prev.filter((_, i) => i !== index));
+                }}
+                className="absolute -top-2 -right-2 bg-red-600 hover:bg-red-700 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs"
+              >
+                ×
+              </button>
+            </div>
+          );
+        }
+      })}
+    </div>
 
+    {/* Campo de digitar mensagem + botões */}
+    <div className="flex space-x-2 items-center">
+      <input
+        type="text"
+        placeholder="Digite uma mensagem..."
+        className="flex-1 bg-emerald-900/40 border border-emerald-800 rounded-full px-4 py-2 text-sm text-white placeholder-emerald-400 focus:outline-none focus:ring-1 focus:ring-emerald-600 h-10"
+        value={newMessage}
+        onChange={(e) => setNewMessage(e.target.value)}
+        onKeyDown={(e) => e.key === "Enter" && handleSendMessage()}
+      />
 
-{/* INPUT E PREVIEW */}
-<div className="p-3 border-t border-emerald-800 bg-emerald-950/60 flex flex-col space-y-2">
- <div className="flex flex-wrap gap-2 mb-2">
-  {newMessageFiles.map((file, index) => {
-    if (file.type.startsWith("image/")) {
-      return (
-        <div key={index} className="relative w-16 h-16">
-          <img
-            src={previews[index]}
-            alt={file.name}
-            className="h-16 w-16 object-cover rounded-md border border-emerald-800"
-          />
-          <button
-            type="button"
-            onClick={() => {
-              setNewMessageFiles(prev => prev.filter((_, i) => i !== index));
-              setPreviews(prev => prev.filter((_, i) => i !== index));
-            }}
-            className="absolute -top-2 -right-2 bg-red-600 hover:bg-red-700 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs"
-          >
-            ×
-          </button>
-        </div>
-      );
-    } else {
-      return (
-        <div
-          key={index}
-          className="relative flex items-center justify-center h-16 w-16 bg-emerald-800/40 text-white rounded-md border border-emerald-800 p-2 text-xs"
-        >
-          <span className="truncate">{file.name}</span>
-          <button
-            type="button"
-            onClick={() => {
-              setNewMessageFiles(prev => prev.filter((_, i) => i !== index));
-              setPreviews(prev => prev.filter((_, i) => i !== index));
-            }}
-            className="absolute -top-2 -right-2 bg-red-600 hover:bg-red-700 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs"
-          >
-            ×
-          </button>
-        </div>
-      );
-    }
-  })}
-</div>
+      <input
+        type="file"
+        id="fileInput"
+        className="hidden"
+        multiple
+        onChange={(e) => handleFileUpload(e.target.files)}
+      />
+      <label
+        htmlFor="fileInput"
+        className="cursor-pointer bg-emerald-600 hover:bg-emerald-700 text-white rounded-full p-2 h-10 w-10 flex items-center justify-center"
+      >
+        <Paperclip className="h-5 w-5" />
+      </label>
 
-
-  {/* Campo de digitar mensagem + botões */}
-  <div className="flex space-x-2 items-center">
-    <input
-      type="text"
-      placeholder="Digite uma mensagem..."
-      className="flex-1 bg-emerald-900/40 border border-emerald-800 rounded-full px-4 py-2 text-sm text-white placeholder-emerald-400 focus:outline-none focus:ring-1 focus:ring-emerald-600 h-10"
-      value={newMessage}
-      onChange={(e) => setNewMessage(e.target.value)}
-      onKeyDown={(e) => e.key === "Enter" && handleSendMessage()}
-    />
-
-    {/* Botão de anexar arquivo */}
-    <input
-      type="file"
-      id="fileInput"
-      className="hidden"
-      multiple
-      onChange={(e) => handleFileUpload(e.target.files)}
-    />
-    <label
-      htmlFor="fileInput"
-      className="cursor-pointer bg-emerald-600 hover:bg-emerald-700 text-white rounded-full p-2 h-10 w-10 flex items-center justify-center"
-    >
-      <Paperclip className="h-5 w-5" />
-    </label>
-
-    {/* Botão enviar */}
-    <Button
-      size="sm"
-      onClick={handleSendMessage}
-     disabled={!newMessage.trim() && newMessageFiles.length === 0}
-      className="bg-emerald-600 hover:bg-emerald-700 text-white rounded-full px-4 h-10 flex items-center justify-center"
-    >
-      Enviar
-    </Button>
+      <Button
+        size="sm"
+        onClick={handleSendMessage}
+        disabled={!newMessage.trim() && newMessageFiles.length === 0}
+        className="bg-emerald-600 hover:bg-emerald-700 text-white rounded-full px-4 h-10 flex items-center justify-center"
+      >
+        Enviar
+      </Button>
+    </div>
   </div>
-</div>
-
-
-
 </SheetContent>
+
 
               </Sheet>
 

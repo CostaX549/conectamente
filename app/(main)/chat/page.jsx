@@ -22,6 +22,7 @@ export default function DoctorChatPainel() {
 
   const messagesContainerRef = useRef(null);
 
+  // 🔹 Carrega usuário e conversas
   useEffect(() => {
     const fetchUserAndChats = async () => {
       try {
@@ -38,6 +39,7 @@ export default function DoctorChatPainel() {
     fetchUserAndChats();
   }, []);
 
+  // 🔹 Carrega mensagens do chat ativo
   useEffect(() => {
     if (!activeChatId) return;
     const loadMessages = async () => {
@@ -54,46 +56,43 @@ export default function DoctorChatPainel() {
     loadMessages();
   }, [activeChatId]);
 
-useEffect(() => {
-  if (!activeChatId) return;
+  // 🔹 Pusher - mensagens em tempo real
+  useEffect(() => {
+    if (!activeChatId) return;
 
-  const channel = pusherClient.subscribe(`chat-${activeChatId}`);
-  const handleNewMessage = (message) => {
-    setMessages((prev) => {
-      const exists = prev.some((m) => m.id === message.id);
-      if (exists) return prev;
+    const channel = pusherClient.subscribe(`chat-${activeChatId}`);
 
-      const normalize = (txt) => (txt ?? "").trim();
-      const tempIndex = prev.findIndex(
-        (m) =>
-          m.pending &&
-          m.senderId === message.senderId &&
-          normalize(m.content) === normalize(message.content)
-      );
+    const handleNewMessage = (message) => {
+      setMessages((prev) => {
+        const exists = prev.some((m) => m.id === message.id);
+        if (exists) return prev;
 
-      if (tempIndex !== -1) {
-        // 🔹 Atualiza a mensagem temporária sem alterar a ordem
-        const updated = [...prev];
-        updated[tempIndex] = {
-          ...message,
-          pending: false,
-        };
-        return updated;
-      }
+        const normalize = (txt) => (txt ?? "").trim();
+        const tempIndex = prev.findIndex(
+          (m) =>
+            m.pending &&
+            m.senderId === message.senderId &&
+            normalize(m.content) === normalize(message.content)
+        );
 
-      // 🔹 Caso não exista temporária, adiciona normalmente no final
-      return [...prev, message];
-    });
-  };
+        if (tempIndex !== -1) {
+          const updated = [...prev];
+          updated[tempIndex] = { ...message, pending: false };
+          return updated;
+        }
 
-  channel.bind("new-message", handleNewMessage);
-  return () => {
-    channel.unbind("new-message", handleNewMessage);
-    pusherClient.unsubscribe(`chat-${activeChatId}`);
-  };
-}, [activeChatId]);
+        return [...prev, message];
+      });
+    };
 
+    channel.bind("new-message", handleNewMessage);
+    return () => {
+      channel.unbind("new-message", handleNewMessage);
+      pusherClient.unsubscribe(`chat-${activeChatId}`);
+    };
+  }, [activeChatId]);
 
+  // 🔹 Auto-scroll no final da conversa
   useEffect(() => {
     if (messagesContainerRef.current) {
       messagesContainerRef.current.scrollTo({
@@ -103,6 +102,7 @@ useEffect(() => {
     }
   }, [messages]);
 
+  // 🔹 Enviar mensagem
   const handleSendMessage = async () => {
     if (!currentUser || !activeChatId) return;
     const tempId = `temp-${Date.now()}`;
@@ -112,12 +112,13 @@ useEffect(() => {
       content: newMessage,
       files: newMessageFiles.map((file, i) => ({
         id: `temp-file-${i}`,
-        url: file.type.startsWith("image/") ? previews[i] : null,
+        url: previews[i]?.url || null,
         filename: file.name,
         mimetype: file.type,
       })),
       pending: true,
     };
+
     setMessages((prev) => [...prev, tempMessage]);
     setNewMessage("");
     setNewMessageFiles([]);
@@ -134,14 +135,24 @@ useEffect(() => {
     }
   };
 
+  // 🔹 Upload de arquivos (suporte a imagem, vídeo e documento)
   const handleFileUpload = (files) => {
     if (!files) return;
     const selectedFiles = Array.from(files);
+
+    const newPreviews = selectedFiles.map((file) => {
+      const isImage = file.type.startsWith("image/");
+      const isVideo = file.type.startsWith("video/");
+      const url = URL.createObjectURL(file);
+      return {
+        name: file.name,
+        type: isImage ? "image" : isVideo ? "video" : "file",
+        url,
+      };
+    });
+
     setNewMessageFiles((prev) => [...prev, ...selectedFiles]);
-    const imagePreviews = selectedFiles
-      .filter((f) => f.type.startsWith("image/"))
-      .map((f) => URL.createObjectURL(f));
-    setPreviews((prev) => [...prev, ...imagePreviews]);
+    setPreviews((prev) => [...prev, ...newPreviews]);
   };
 
   if (isLoading) {
@@ -156,12 +167,10 @@ useEffect(() => {
 
   return (
     <div className="flex h-[85vh] bg-[#050505] text-white md:flex-row flex-col transition-all duration-300">
-      {/* Sidebar */}
+      {/* 🔹 Sidebar */}
       <aside
         className={`bg-[#0b0b0b] border-r border-emerald-900/40 p-4 flex flex-col 
-        w-full md:w-72 md:block ${
-          activeChatId ? "hidden md:flex" : "flex"
-        } transition-all`}
+        w-full md:w-72 md:block ${activeChatId ? "hidden md:flex" : "flex"} transition-all`}
       >
         <h1 className="text-2xl font-bold text-emerald-500 mb-6 text-center md:text-left">
           💬 Conversas
@@ -210,7 +219,7 @@ useEffect(() => {
         </div>
       </aside>
 
-      {/* Main chat */}
+      {/* 🔹 Chat principal */}
       <main
         className={`flex-1 flex flex-col bg-[#0b0b0b] ${
           activeChatId ? "flex" : "hidden md:flex"
@@ -222,9 +231,8 @@ useEffect(() => {
           </div>
         ) : (
           <>
-            {/* Header */}
+            {/* 🔹 Cabeçalho */}
             <div className="p-4 border-b border-emerald-900/40 flex items-center shrink-0 relative">
-              {/* Voltar (mobile) */}
               <button
                 onClick={() => setActiveChatId(null)}
                 className="absolute left-4 md:hidden p-2 text-emerald-400"
@@ -256,7 +264,7 @@ useEffect(() => {
               </div>
             </div>
 
-            {/* Messages */}
+            {/* 🔹 Mensagens */}
             <div
               ref={messagesContainerRef}
               className="flex-1 overflow-y-auto px-4 md:px-6 py-4 space-y-3 bg-gradient-to-b from-[#0b0b0b] to-[#08100b]"
@@ -285,16 +293,28 @@ useEffect(() => {
                         {msg.files && msg.files.length > 0 && (
                           <div className="mt-2 flex flex-wrap gap-2">
                             {msg.files.map((file) => {
-                              if (file.mimetype.startsWith("image/")) {
+                              if (file.mimetype?.startsWith("image/")) {
                                 return (
                                   <Image
                                     key={file.id}
-                                    src={file.url || "/placeholder-image.png"}
+                                    src={file.url}
                                     alt={file.filename}
-                                    width={100}
-                                    height={100}
+                                    width={120}
+                                    height={120}
                                     className="object-cover rounded-md border border-emerald-800"
                                   />
+                                );
+                              } else if (file.mimetype?.startsWith("video/")) {
+                                return (
+                                  <video
+                                    key={file.id}
+                                    controls
+                                    width={200}
+                                    className="rounded-md border border-emerald-800"
+                                  >
+                                    <source src={file.url} type={file.mimetype} />
+                                    Seu navegador não suporta vídeo.
+                                  </video>
                                 );
                               } else {
                                 return (
@@ -319,84 +339,88 @@ useEffect(() => {
               )}
             </div>
 
-            {/* Input */}
-            <div className="p-3 md:p-4 border-t border-emerald-900/40 bg-[#0b0b0b] shrink-0 flex flex-col gap-3">
-              {/* Pré-visualização de arquivos antes do envio */}
-{(previews.length > 0 || newMessageFiles.length > 0) && (
-  <div className="flex flex-wrap gap-3 p-2 bg-emerald-950/30 border border-emerald-800/40 rounded-xl">
-    {newMessageFiles.map((file, index) => {
-      const isImage = file.type.startsWith("image/");
-      return (
-        <div
-          key={index}
-          className="relative group w-20 h-20 flex items-center justify-center rounded-lg overflow-hidden border border-emerald-800/60 bg-emerald-950/60"
-        >
-          {isImage ? (
-            <Image
-              src={previews[index]}
-              alt={file.name}
-              width={80}
-              height={80}
-              className="object-cover w-full h-full"
-            />
-          ) : (
-            <div className="flex flex-col items-center justify-center text-xs text-gray-300 p-1 text-center">
-              <Paperclip className="w-4 h-4 text-emerald-400 mb-1" />
-              <span className="truncate max-w-[70px]">{file.name}</span>
-            </div>
-          )}
-          {/* Botão para remover arquivo */}
-          <button
-            onClick={() => {
-              const newFiles = [...newMessageFiles];
-              const newPreviews = [...previews];
-              newFiles.splice(index, 1);
-              newPreviews.splice(index, 1);
-              setNewMessageFiles(newFiles);
-              setPreviews(newPreviews);
-            }}
-            className="absolute top-1 right-1 bg-black/60 rounded-full text-xs text-white px-[5px] hover:bg-red-600 transition"
-            title="Remover"
-          >
-            ×
-          </button>
-        </div>
-      );
-    })}
-  </div>
-)}
-
-              <div className="flex items-center gap-3">
-                <input
-                  type="text"
-                  placeholder="Digite uma mensagem..."
-                  className="flex-1 bg-emerald-950/40 border border-emerald-800 rounded-xl px-4 py-2 text-sm text-white focus:outline-none focus:ring-1 focus:ring-emerald-600"
-                  value={newMessage}
-                  onChange={(e) => setNewMessage(e.target.value)}
-                  onKeyDown={(e) => e.key === "Enter" && handleSendMessage()}
-                />
-                <input
-                  type="file"
-                  id="fileInput"
-                  className="hidden"
-                  multiple
-                  onChange={(e) => handleFileUpload(e.target.files)}
-                />
-                <label
-                  htmlFor="fileInput"
-                  className="cursor-pointer bg-emerald-700 hover:bg-emerald-600 p-2 rounded-xl"
-                >
-                  <Paperclip className="w-4 h-4" />
-                </label>
-                <Button
-                  size="sm"
-                  onClick={handleSendMessage}
-                  disabled={!newMessage.trim() && !newMessageFiles.length}
-                  className="bg-emerald-700 hover:bg-emerald-600 rounded-xl"
-                >
-                  <Send className="w-4 h-4" />
-                </Button>
+            {/* 🔹 Pré-visualizações */}
+            {previews.length > 0 && (
+              <div className="flex flex-wrap gap-3 p-2 bg-emerald-950/30 border border-emerald-800/40 rounded-xl">
+                {previews.map((preview, index) => (
+                  <div
+                    key={index}
+                    className="relative group w-24 h-24 flex items-center justify-center rounded-lg overflow-hidden border border-emerald-800/60 bg-emerald-950/60"
+                  >
+                    {preview.type === "image" && (
+                      <Image
+                        src={preview.url}
+                        alt={preview.name}
+                        width={96}
+                        height={96}
+                        className="object-cover w-full h-full"
+                      />
+                    )}
+                    {preview.type === "video" && (
+                      <video
+                        src={preview.url}
+                        className="object-cover w-full h-full"
+                        muted
+                        loop
+                        autoPlay
+                      />
+                    )}
+                    {preview.type === "file" && (
+                      <div className="flex flex-col items-center justify-center text-xs text-gray-300 p-1 text-center">
+                        <Paperclip className="w-4 h-4 text-emerald-400 mb-1" />
+                        <span className="truncate max-w-[70px]">{preview.name}</span>
+                      </div>
+                    )}
+                    <button
+                      onClick={() => {
+                        const newFiles = [...newMessageFiles];
+                        const newPreviews = [...previews];
+                        newFiles.splice(index, 1);
+                        newPreviews.splice(index, 1);
+                        setNewMessageFiles(newFiles);
+                        setPreviews(newPreviews);
+                      }}
+                      className="absolute top-1 right-1 bg-black/60 rounded-full text-xs text-white px-[5px] hover:bg-red-600 transition"
+                      title="Remover"
+                    >
+                      ×
+                    </button>
+                  </div>
+                ))}
               </div>
+            )}
+
+            {/* 🔹 Input */}
+            <div className="p-3 md:p-4 border-t border-emerald-900/40 bg-[#0b0b0b] shrink-0 flex items-center gap-3">
+              <input
+                type="text"
+                placeholder="Digite uma mensagem..."
+                className="flex-1 bg-emerald-950/40 border border-emerald-800 rounded-xl px-4 py-2 text-sm text-white focus:outline-none focus:ring-1 focus:ring-emerald-600"
+                value={newMessage}
+                onChange={(e) => setNewMessage(e.target.value)}
+                onKeyDown={(e) => e.key === "Enter" && handleSendMessage()}
+              />
+              <input
+                type="file"
+                id="fileInput"
+                className="hidden"
+                multiple
+                onChange={(e) => handleFileUpload(e.target.files)}
+              />
+              <label
+                htmlFor="fileInput"
+                className="cursor-pointer bg-emerald-700 hover:bg-emerald-600 p-2 rounded-xl"
+              >
+                <Paperclip className="w-4 h-4" />
+              </label>
+              <Button
+                size="sm"
+                onClick={handleSendMessage}
+                disabled={!newMessage.trim() && !newMessageFiles.length}
+                className="bg-emerald-700 hover:bg-emerald-600 rounded-xl"
+              >
+                <Send className="w-4 h-4" />
+              </Button>
             </div>
           </>
         )}
