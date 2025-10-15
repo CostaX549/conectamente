@@ -321,6 +321,51 @@ useEffect(() => {
 
             {/* Input */}
             <div className="p-3 md:p-4 border-t border-emerald-900/40 bg-[#0b0b0b] shrink-0 flex flex-col gap-3">
+              {/* Pré-visualização de arquivos antes do envio */}
+{(previews.length > 0 || newMessageFiles.length > 0) && (
+  <div className="flex flex-wrap gap-3 p-2 bg-emerald-950/30 border border-emerald-800/40 rounded-xl">
+    {newMessageFiles.map((file, index) => {
+      const isImage = file.type.startsWith("image/");
+      return (
+        <div
+          key={index}
+          className="relative group w-20 h-20 flex items-center justify-center rounded-lg overflow-hidden border border-emerald-800/60 bg-emerald-950/60"
+        >
+          {isImage ? (
+            <Image
+              src={previews[index]}
+              alt={file.name}
+              width={80}
+              height={80}
+              className="object-cover w-full h-full"
+            />
+          ) : (
+            <div className="flex flex-col items-center justify-center text-xs text-gray-300 p-1 text-center">
+              <Paperclip className="w-4 h-4 text-emerald-400 mb-1" />
+              <span className="truncate max-w-[70px]">{file.name}</span>
+            </div>
+          )}
+          {/* Botão para remover arquivo */}
+          <button
+            onClick={() => {
+              const newFiles = [...newMessageFiles];
+              const newPreviews = [...previews];
+              newFiles.splice(index, 1);
+              newPreviews.splice(index, 1);
+              setNewMessageFiles(newFiles);
+              setPreviews(newPreviews);
+            }}
+            className="absolute top-1 right-1 bg-black/60 rounded-full text-xs text-white px-[5px] hover:bg-red-600 transition"
+            title="Remover"
+          >
+            ×
+          </button>
+        </div>
+      );
+    })}
+  </div>
+)}
+
               <div className="flex items-center gap-3">
                 <input
                   type="text"
