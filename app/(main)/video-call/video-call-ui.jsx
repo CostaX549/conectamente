@@ -81,36 +81,44 @@ const [previews, setPreviews] = useState([]);
 
   // 🔹 Pusher — escutar novas mensagens
   useEffect(() => {
-    if (!chatId) return;
+  if (!chatId) return;
 
-    const channel = pusherClient.subscribe(`chat-${chatId}`);
-     const handleNewMessage = (message) => {
-  setMessages((prev) => {
-    // Se a mensagem já existe pelo id → ignora
-    const exists = prev.some((m) => m.id === message.id);
-    if (exists) return prev;
-   const normalizeContent = (content) =>
-      (content ?? "").trim();
+  const channel = pusherClient.subscribe(`chat-${chatId}`);
+  const handleNewMessage = (message) => {
+    setMessages((prev) => {
+      const exists = prev.some((m) => m.id === message.id);
+      if (exists) return prev;
 
-    const withoutTemp = prev.filter(
-      (m) =>
-        !(
+      const normalize = (txt) => (txt ?? "").trim();
+      const tempIndex = prev.findIndex(
+        (m) =>
           m.pending &&
           m.senderId === message.senderId &&
-          normalizeContent(m.content) === normalizeContent(message.content)
-        )
-    );
+          normalize(m.content) === normalize(message.content)
+      );
 
-    return [...withoutTemp, message];
-  });
-};
-    channel.bind("new-message", handleNewMessage);
+      if (tempIndex !== -1) {
+        // 🔹 Atualiza a mensagem temporária sem alterar a ordem
+        const updated = [...prev];
+        updated[tempIndex] = {
+          ...message,
+          pending: false,
+        };
+        return updated;
+      }
 
-    return () => {
-      channel.unbind_all();
-      channel.unsubscribe();
-    };
-  }, [chatId]);
+      // 🔹 Caso não exista temporária, adiciona normalmente no final
+      return [...prev, message];
+    });
+  };
+
+  channel.bind("new-message", handleNewMessage);
+  return () => {
+    channel.unbind("new-message", handleNewMessage);
+    pusherClient.unsubscribe(`chat-${chatId}`);
+  };
+}, [chatId]);
+
 useEffect(() => {
   if (messagesEndRef.current) {
     messagesEndRef.current.scrollIntoView({ behavior: "smooth" });
@@ -522,7 +530,7 @@ const handleFileUpload = (files) => {
     <Button
       size="sm"
       onClick={handleSendMessage}
-      disabled={!newMessage.trim() && !newMessageFiles}
+     disabled={!newMessage.trim() && newMessageFiles.length === 0}
       className="bg-emerald-600 hover:bg-emerald-700 text-white rounded-full px-4 h-10 flex items-center justify-center"
     >
       Enviar
