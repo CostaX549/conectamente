@@ -7,7 +7,7 @@ import { pusherClient } from "@/lib/pusher";
 import { getChatMessages, sendMessage, getUserChats } from "@/actions/chat";
 import { getCurrentUser } from "@/actions/onboarding";
 import { Button } from "@/components/ui/button";
-import { Paperclip, Loader2, Send } from "lucide-react";
+import { Paperclip, Loader2, Send, ArrowLeft } from "lucide-react";
 
 export default function DoctorChatPainel() {
   const [currentUser, setCurrentUser] = useState(null);
@@ -22,7 +22,6 @@ export default function DoctorChatPainel() {
 
   const messagesContainerRef = useRef(null);
 
-  // 🔹 Buscar usuário e chats
   useEffect(() => {
     const fetchUserAndChats = async () => {
       try {
@@ -30,7 +29,7 @@ export default function DoctorChatPainel() {
         setCurrentUser(user);
         const userChats = await getUserChats();
         setChats(userChats.chats);
-      } catch (err) {
+      } catch {
         toast.error("Erro ao carregar usuário ou chats");
       } finally {
         setIsLoading(false);
@@ -39,7 +38,6 @@ export default function DoctorChatPainel() {
     fetchUserAndChats();
   }, []);
 
-  // 🔹 Carregar mensagens do chat ativo
   useEffect(() => {
     if (!activeChatId) return;
     const loadMessages = async () => {
@@ -56,36 +54,46 @@ export default function DoctorChatPainel() {
     loadMessages();
   }, [activeChatId]);
 
-  // 🔹 Pusher para novas mensagens
-  useEffect(() => {
-    if (!activeChatId) return;
+useEffect(() => {
+  if (!activeChatId) return;
 
-    const channel = pusherClient.subscribe(`chat-${activeChatId}`);
-    const handleNewMessage = (message) => {
-      setMessages((prev) => {
-        const exists = prev.some((m) => m.id === message.id);
-        if (exists) return prev;
-        const normalize = (txt) => (txt ?? "").trim();
-        const withoutTemp = prev.filter(
-          (m) =>
-            !(
-              m.pending &&
-              m.senderId === message.senderId &&
-              normalize(m.content) === normalize(message.content)
-            )
-        );
-        return [...withoutTemp, message];
-      });
-    };
+  const channel = pusherClient.subscribe(`chat-${activeChatId}`);
+  const handleNewMessage = (message) => {
+    setMessages((prev) => {
+      const exists = prev.some((m) => m.id === message.id);
+      if (exists) return prev;
 
-    channel.bind("new-message", handleNewMessage);
-    return () => {
-      channel.unbind("new-message", handleNewMessage);
-      pusherClient.unsubscribe(`chat-${activeChatId}`);
-    };
-  }, [activeChatId]);
+      const normalize = (txt) => (txt ?? "").trim();
+      const tempIndex = prev.findIndex(
+        (m) =>
+          m.pending &&
+          m.senderId === message.senderId &&
+          normalize(m.content) === normalize(message.content)
+      );
 
-  // 🔹 Scroll automático apenas na área de mensagens
+      if (tempIndex !== -1) {
+        // 🔹 Atualiza a mensagem temporária sem alterar a ordem
+        const updated = [...prev];
+        updated[tempIndex] = {
+          ...message,
+          pending: false,
+        };
+        return updated;
+      }
+
+      // 🔹 Caso não exista temporária, adiciona normalmente no final
+      return [...prev, message];
+    });
+  };
+
+  channel.bind("new-message", handleNewMessage);
+  return () => {
+    channel.unbind("new-message", handleNewMessage);
+    pusherClient.unsubscribe(`chat-${activeChatId}`);
+  };
+}, [activeChatId]);
+
+
   useEffect(() => {
     if (messagesContainerRef.current) {
       messagesContainerRef.current.scrollTo({
@@ -147,13 +155,22 @@ export default function DoctorChatPainel() {
   const activeChat = chats.find((c) => c.id === activeChatId);
 
   return (
-    <div className="flex h-[85vh] bg-[#050505] text-white">
+    <div className="flex h-[85vh] bg-[#050505] text-white md:flex-row flex-col transition-all duration-300">
       {/* Sidebar */}
-      <aside className="w-72 bg-[#0b0b0b] border-r border-emerald-900/40 p-4 flex flex-col">
-        <h1 className="text-2xl font-bold text-emerald-500 mb-6">💬 Conversas</h1>
+      <aside
+        className={`bg-[#0b0b0b] border-r border-emerald-900/40 p-4 flex flex-col 
+        w-full md:w-72 md:block ${
+          activeChatId ? "hidden md:flex" : "flex"
+        } transition-all`}
+      >
+        <h1 className="text-2xl font-bold text-emerald-500 mb-6 text-center md:text-left">
+          💬 Conversas
+        </h1>
         <div className="flex-1 overflow-y-auto space-y-2">
           {chats.length === 0 ? (
-            <p className="text-emerald-400 text-sm opacity-70">Nenhuma conversa</p>
+            <p className="text-emerald-400 text-sm opacity-70 text-center md:text-left">
+              Nenhuma conversa
+            </p>
           ) : (
             chats.map((chat) => {
               const otherUser =
@@ -178,11 +195,12 @@ export default function DoctorChatPainel() {
                     className="rounded-full mr-3 object-cover"
                   />
                   <div className="text-left">
-                    <div className="font-semibold text-emerald-400">
+                    <div className="font-semibold text-emerald-400 text-sm">
                       {otherUser.name?.replace(/null/g, "").trim()}
                     </div>
                     <div className="text-xs text-gray-400 truncate">
-                      {chat.messages?.[chat.messages.length - 1]?.content || "Sem mensagens"}
+                      {chat.messages?.[chat.messages.length - 1]?.content ||
+                        "Sem mensagens"}
                     </div>
                   </div>
                 </button>
@@ -192,16 +210,28 @@ export default function DoctorChatPainel() {
         </div>
       </aside>
 
-      {/* Área principal */}
-      <main className="flex-1 flex flex-col bg-[#0b0b0b]">
+      {/* Main chat */}
+      <main
+        className={`flex-1 flex flex-col bg-[#0b0b0b] ${
+          activeChatId ? "flex" : "hidden md:flex"
+        } transition-all`}
+      >
         {!activeChat ? (
-          <div className="flex items-center justify-center flex-1 text-gray-400">
+          <div className="flex items-center justify-center flex-1 text-gray-400 text-center p-4">
             Selecione um chat para começar
           </div>
         ) : (
           <>
-            {/* Cabeçalho */}
-            <div className="p-4 border-b border-emerald-900/40 flex items-center shrink-0">
+            {/* Header */}
+            <div className="p-4 border-b border-emerald-900/40 flex items-center shrink-0 relative">
+              {/* Voltar (mobile) */}
+              <button
+                onClick={() => setActiveChatId(null)}
+                className="absolute left-4 md:hidden p-2 text-emerald-400"
+              >
+                <ArrowLeft className="w-5 h-5" />
+              </button>
+
               <Image
                 src={
                   activeChat.doctor.id === currentUser?.id
@@ -211,10 +241,10 @@ export default function DoctorChatPainel() {
                 alt="User"
                 width={40}
                 height={40}
-                className="rounded-full mr-3"
+                className="rounded-full mr-3 ml-8 md:ml-0"
               />
               <div>
-                <div className="font-semibold text-emerald-400">
+                <div className="font-semibold text-emerald-400 text-sm md:text-base">
                   {(activeChat.doctor.id === currentUser?.id
                     ? activeChat.patient.name
                     : activeChat.doctor.name
@@ -226,70 +256,71 @@ export default function DoctorChatPainel() {
               </div>
             </div>
 
-            {/* 🔹 Área de mensagens com scroll independente */}
+            {/* Messages */}
             <div
               ref={messagesContainerRef}
-              className="flex-1 overflow-y-auto px-6 py-4 space-y-3 bg-gradient-to-b from-[#0b0b0b] to-[#08100b]"
+              className="flex-1 overflow-y-auto px-4 md:px-6 py-4 space-y-3 bg-gradient-to-b from-[#0b0b0b] to-[#08100b]"
             >
               {isMessagesLoading ? (
-  <div className="flex justify-center items-center py-10">
-    <Loader2 className="h-8 w-8 text-emerald-400 animate-spin" />
-  </div>
-) : (
-  messages.map((msg) => {
-    const isMe = msg.senderId === currentUser?.id;
-    return (
-      <div key={msg.id} className={`flex ${isMe ? "justify-end" : "justify-start"}`}>
-        <div
-          className={`px-4 py-2 rounded-2xl max-w-[70%] ${
-            isMe
-              ? "bg-emerald-700 text-white rounded-br-none"
-              : "bg-emerald-950/40 border border-emerald-800/50 text-gray-200 rounded-bl-none"
-          }`}
-        >
-          {msg.content && <p>{msg.content}</p>}
-
-          {msg.files && msg.files.length > 0 && (
-            <div className="mt-2 flex flex-wrap gap-2">
-              {msg.files.map((file) => {
-                if (file.mimetype.startsWith("image/")) {
+                <div className="flex justify-center items-center py-10">
+                  <Loader2 className="h-8 w-8 text-emerald-400 animate-spin" />
+                </div>
+              ) : (
+                messages.map((msg) => {
+                  const isMe = msg.senderId === currentUser?.id;
                   return (
-                    <Image
-                      key={file.id}
-                      src={file.url || "/placeholder-image.png"}
-                      alt={file.filename}
-                      width={100}
-                      height={100}
-                      className="object-cover rounded-md border border-emerald-800"
-                    />
-                  );
-                } else {
-                  return (
-                    <a
-                      key={file.id}
-                      href={file.url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="inline-block px-2 py-1 text-xs text-emerald-100 bg-emerald-800/40 rounded-md border border-emerald-700"
+                    <div
+                      key={msg.id}
+                      className={`flex ${isMe ? "justify-end" : "justify-start"}`}
                     >
-                      {file.filename}
-                    </a>
+                      <div
+                        className={`px-4 py-2 rounded-2xl max-w-[85%] md:max-w-[70%] text-sm md:text-base ${
+                          isMe
+                            ? "bg-emerald-700 text-white rounded-br-none"
+                            : "bg-emerald-950/40 border border-emerald-800/50 text-gray-200 rounded-bl-none"
+                        }`}
+                      >
+                        {msg.content && <p>{msg.content}</p>}
+
+                        {msg.files && msg.files.length > 0 && (
+                          <div className="mt-2 flex flex-wrap gap-2">
+                            {msg.files.map((file) => {
+                              if (file.mimetype.startsWith("image/")) {
+                                return (
+                                  <Image
+                                    key={file.id}
+                                    src={file.url || "/placeholder-image.png"}
+                                    alt={file.filename}
+                                    width={100}
+                                    height={100}
+                                    className="object-cover rounded-md border border-emerald-800"
+                                  />
+                                );
+                              } else {
+                                return (
+                                  <a
+                                    key={file.id}
+                                    href={file.url}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="inline-block px-2 py-1 text-xs text-emerald-100 bg-emerald-800/40 rounded-md border border-emerald-700"
+                                  >
+                                    {file.filename}
+                                  </a>
+                                );
+                              }
+                            })}
+                          </div>
+                        )}
+                      </div>
+                    </div>
                   );
-                }
-              })}
-            </div>
-          )}
-        </div>
-      </div>
-    );
-  })
-)}
-
-
+                })
+              )}
             </div>
 
-            {/* Input fixo */}
-            <div className="p-4 border-t border-emerald-900/40 bg-[#0b0b0b] shrink-0 flex flex-col gap-3">
+            {/* Input */}
+            <div className="p-3 md:p-4 border-t border-emerald-900/40 bg-[#0b0b0b] shrink-0 flex flex-col gap-3">
               <div className="flex items-center gap-3">
                 <input
                   type="text"
