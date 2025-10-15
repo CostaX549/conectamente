@@ -154,7 +154,7 @@ export async function getDoctorAppointments() {
         patient: true,
       },
       orderBy: {
-        startTime: "asc",
+        startTime: "desc",
       },
     });
 
