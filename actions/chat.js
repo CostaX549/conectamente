@@ -164,7 +164,7 @@ export async function sendMessage(formData) {
     if (files.length > 0) {
       const uploadsDir = path.join(process.cwd(), "public", "uploads");
      
-
+  await fs.mkdir(uploadsDir, { recursive: true });
       const filesData = await Promise.all(
         files.map(async (file) => {
           const filename = `${Date.now()}-${file.name}`;
