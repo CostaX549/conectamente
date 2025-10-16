@@ -220,11 +220,11 @@ export default function DoctorChatPainel() {
       </aside>
 
       {/* 🔹 Chat principal */}
-      <main
-        className={`flex-1 flex flex-col bg-[#0b0b0b] ${
-          activeChatId ? "flex" : "hidden md:flex"
-        } transition-all`}
-      >
+     <main
+  className={`flex-1 flex flex-col bg-[#0b0b0b] h-[85vh] ${
+    activeChatId ? "flex" : "hidden md:flex"
+  } transition-all`}
+>
         {!activeChat ? (
           <div className="flex items-center justify-center flex-1 text-gray-400 text-center p-4">
             Selecione um chat para começar
@@ -267,7 +267,7 @@ export default function DoctorChatPainel() {
             {/* 🔹 Mensagens */}
             <div
               ref={messagesContainerRef}
-              className="flex-1 overflow-y-auto px-4 md:px-6 py-4 space-y-3 bg-gradient-to-b from-[#0b0b0b] to-[#08100b]"
+              className="flex-1 overflow-y-auto px-4 md:px-6 py-4 space-y-3 bg-gradient-to-b from-[#0b0b0b] to-[#08100b] min-h-0"
             >
               {isMessagesLoading ? (
                 <div className="flex justify-center items-center py-10">
