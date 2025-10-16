@@ -16,7 +16,7 @@ export default function Home() {
         <div className="absolute inset-0 bg-gradient-to-br from-emerald-900 via-background to-emerald-950 opacity-90" />
         <div className="absolute -top-40 -right-40 w-[500px] h-[500px] bg-emerald-600/30 blur-3xl rounded-full" />
         <div className="container relative z-10 mx-auto px-6 flex flex-col lg:flex-row items-center gap-20">
-          <div className="lg:w-1/2 space-y-8 text-center lg:text-left">
+        <div className="lg:w-1/2 space-y-8 text-center lg:text-left mt-20 lg:mt-0">
             <h1 className="text-5xl md:text-7xl font-extrabold leading-tight">
               ConectaMente <br/> <span className="text-emerald-400">Terapia sem barreiras</span>
             </h1>
