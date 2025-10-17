@@ -178,7 +178,7 @@ export function AvailabilitySettings({ slots }) {
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
-                <Label className="mb-1">Dia da Semana</Label>
+                <Label className="mb-2">Dia da Semana</Label>
                 <Select
                   onValueChange={(val) => setValue("dayOfWeek", val)}
                   defaultValue={watch("dayOfWeek")}
@@ -200,7 +200,7 @@ export function AvailabilitySettings({ slots }) {
               </div>
 
               <div>
-                <Label className="mb-1">Horário de Início</Label>
+                <Label className="mb-2">Horário de Início</Label>
                 <Input
                   type="time"
                   {...register("startTime", { required: true })}
@@ -209,7 +209,7 @@ export function AvailabilitySettings({ slots }) {
               </div>
 
               <div>
-                <Label className="mb-1">Horário de Término</Label>
+                <Label className="mb-2">Horário de Término</Label>
                 <Input
                   type="time"
                   {...register("endTime", { required: true })}
@@ -218,7 +218,7 @@ export function AvailabilitySettings({ slots }) {
               </div>
 
               <div>
-                <Label className="mb-1">Início do Intervalo (opcional)</Label>
+                <Label className="mb-2">Início do Intervalo (opcional)</Label>
                 <Input
                   type="time"
                   {...register("breakStart")}
@@ -227,7 +227,7 @@ export function AvailabilitySettings({ slots }) {
               </div>
 
               <div>
-                <Label className="mb-1">Fim do Intervalo (opcional)</Label>
+                <Label className="mb-2">Fim do Intervalo (opcional)</Label>
                 <Input
                   type="time"
                   {...register("breakEnd")}
