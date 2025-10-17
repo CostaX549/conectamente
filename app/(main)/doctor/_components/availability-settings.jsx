@@ -60,7 +60,13 @@ export function AvailabilitySettings({ slots }) {
   const createLocalDateFromTime = (timeStr) => {
     const [hours, minutes] = timeStr.split(":").map(Number);
     const now = new Date();
-    return new Date(now.getFullYear(), now.getMonth(), now.getDate(), hours, minutes);
+    return new Date(
+      now.getFullYear(),
+      now.getMonth(),
+      now.getDate(),
+      hours,
+      minutes
+    );
   };
 
   const onSubmit = async (data) => {
@@ -68,12 +74,24 @@ export function AvailabilitySettings({ slots }) {
 
     const formData = new FormData();
     formData.append("dayOfWeek", data.dayOfWeek);
-    formData.append("startTime", createLocalDateFromTime(data.startTime).toISOString());
-    formData.append("endTime", createLocalDateFromTime(data.endTime).toISOString());
+    formData.append(
+      "startTime",
+      createLocalDateFromTime(data.startTime).toISOString()
+    );
+    formData.append(
+      "endTime",
+      createLocalDateFromTime(data.endTime).toISOString()
+    );
     if (data.breakStart)
-      formData.append("breakStart", createLocalDateFromTime(data.breakStart).toISOString());
+      formData.append(
+        "breakStart",
+        createLocalDateFromTime(data.breakStart).toISOString()
+      );
     if (data.breakEnd)
-      formData.append("breakEnd", createLocalDateFromTime(data.breakEnd).toISOString());
+      formData.append(
+        "breakEnd",
+        createLocalDateFromTime(data.breakEnd).toISOString()
+      );
 
     await submitSlots(formData);
   };
@@ -103,10 +121,14 @@ export function AvailabilitySettings({ slots }) {
         {!showForm ? (
           <>
             <div className="mb-6">
-              <h3 className="text-lg font-medium text-white mb-3">Disponibilidade Atual</h3>
+              <h3 className="text-lg font-medium text-white mb-3">
+                Disponibilidade Atual
+              </h3>
 
               {slots.length === 0 ? (
-                <p className="text-muted-foreground">Nenhum horário definido ainda.</p>
+                <p className="text-muted-foreground">
+                  Nenhum horário definido ainda.
+                </p>
               ) : (
                 <div className="space-y-3">
                   {slots.map((slot) => (
@@ -119,8 +141,10 @@ export function AvailabilitySettings({ slots }) {
                       </div>
                       <div>
                         <p className="text-white font-medium">
-                          {daysOfWeek.find((d) => d.value === slot.dayOfWeek)?.label} -{" "}
-                          {formatTime(slot.startTime)} às {formatTime(slot.endTime)}
+                          {daysOfWeek.find((d) => d.value === slot.dayOfWeek)
+                            ?.label}{" "}
+                          - {formatTime(slot.startTime)} às{" "}
+                          {formatTime(slot.endTime)}
                         </p>
                         {slot.breakStart && slot.breakEnd && (
                           <p className="text-xs text-muted-foreground">
@@ -148,16 +172,18 @@ export function AvailabilitySettings({ slots }) {
             onSubmit={handleSubmit(onSubmit)}
             className="space-y-4 border border-emerald-900/20 rounded-md p-4"
           >
-            <h3 className="text-lg font-medium text-white mb-2">Nova Disponibilidade</h3>
+            <h3 className="text-lg font-medium text-white mb-2">
+              Nova Disponibilidade
+            </h3>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
-                <Label>Dia da Semana</Label>
+                <Label className="mb-1">Dia da Semana</Label>
                 <Select
                   onValueChange={(val) => setValue("dayOfWeek", val)}
                   defaultValue={watch("dayOfWeek")}
                 >
-                  <SelectTrigger className="bg-background border-emerald-900/20 text-white">
+                  <SelectTrigger className="bg-background border-emerald-900/20 text-white w-full max-w-[180px]">
                     <SelectValue placeholder="Selecione um dia" />
                   </SelectTrigger>
                   <SelectContent>
@@ -174,7 +200,7 @@ export function AvailabilitySettings({ slots }) {
               </div>
 
               <div>
-                <Label>Horário de Início</Label>
+                <Label className="mb-1">Horário de Início</Label>
                 <Input
                   type="time"
                   {...register("startTime", { required: true })}
@@ -183,7 +209,7 @@ export function AvailabilitySettings({ slots }) {
               </div>
 
               <div>
-                <Label>Horário de Término</Label>
+                <Label className="mb-1">Horário de Término</Label>
                 <Input
                   type="time"
                   {...register("endTime", { required: true })}
@@ -192,7 +218,7 @@ export function AvailabilitySettings({ slots }) {
               </div>
 
               <div>
-                <Label>Início do Intervalo (opcional)</Label>
+                <Label className="mb-1">Início do Intervalo (opcional)</Label>
                 <Input
                   type="time"
                   {...register("breakStart")}
@@ -201,7 +227,7 @@ export function AvailabilitySettings({ slots }) {
               </div>
 
               <div>
-                <Label>Fim do Intervalo (opcional)</Label>
+                <Label className="mb-1">Fim do Intervalo (opcional)</Label>
                 <Input
                   type="time"
                   {...register("breakEnd")}
@@ -211,7 +237,11 @@ export function AvailabilitySettings({ slots }) {
             </div>
 
             <div className="flex justify-end gap-3 pt-2">
-              <Button variant="outline" type="button" onClick={() => setShowForm(false)}>
+              <Button
+                variant="outline"
+                type="button"
+                onClick={() => setShowForm(false)}
+              >
                 Cancelar
               </Button>
               <Button
