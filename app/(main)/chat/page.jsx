@@ -207,10 +207,7 @@ export default function DoctorChatPainel() {
                     <div className="font-semibold text-emerald-400 text-sm">
                       {otherUser.name?.replace(/null/g, "").trim()}
                     </div>
-                    <div className="text-xs text-gray-400 truncate">
-                      {chat.messages?.[chat.messages.length - 1]?.content ||
-                        "Sem mensagens"}
-                    </div>
+                   
                   </div>
                 </button>
               );
