@@ -27,7 +27,6 @@ export async function bookAppointment(formData) {
   }
 
   try {
-    // Get the patient user
     const patient = await db.user.findUnique({
       where: {
         clerkUserId: userId,
@@ -39,18 +38,15 @@ export async function bookAppointment(formData) {
       throw new Error("Patient not found");
     }
 
-    // Parse form data
     const doctorId = formData.get("doctorId");
     const startTime = new Date(formData.get("startTime"));
     const endTime = new Date(formData.get("endTime"));
     const patientDescription = formData.get("description") || null;
 
-    // Validate input
     if (!doctorId || !startTime || !endTime) {
       throw new Error("Doctor, start time, and end time are required");
     }
 
-    // Check if the doctor exists and is verified
     const doctor = await db.user.findUnique({
       where: {
         id: doctorId,
@@ -63,44 +59,18 @@ export async function bookAppointment(formData) {
       throw new Error("Doctor not found or not verified");
     }
 
-    // Check if the patient has enough credits (2 credits per appointment)
     if (patient.credits < 2) {
       throw new Error("Insufficient credits to book an appointment");
     }
 
-    // Check if the requested time slot is available
     const overlappingAppointment = await db.appointment.findFirst({
       where: {
         doctorId: doctorId,
         status: "SCHEDULED",
         OR: [
-          {
-            // New appointment starts during an existing appointment
-            startTime: {
-              lte: startTime,
-            },
-            endTime: {
-              gt: startTime,
-            },
-          },
-          {
-            // New appointment ends during an existing appointment
-            startTime: {
-              lt: endTime,
-            },
-            endTime: {
-              gte: endTime,
-            },
-          },
-          {
-            // New appointment completely overlaps an existing appointment
-            startTime: {
-              gte: startTime,
-            },
-            endTime: {
-              lte: endTime,
-            },
-          },
+          { startTime: { lte: startTime }, endTime: { gt: startTime } },
+          { startTime: { lt: endTime }, endTime: { gte: endTime } },
+          { startTime: { gte: startTime }, endTime: { lte: endTime } },
         ],
       },
     });
@@ -109,10 +79,8 @@ export async function bookAppointment(formData) {
       throw new Error("This time slot is already booked");
     }
 
-    // Create a new Vonage Video API session
     const sessionId = await createVideoSession();
 
-    // Deduct credits from patient and add to doctor
     const { success, error } = await deductCreditsForAppointment(
       patient.id,
       doctor.id
@@ -122,7 +90,6 @@ export async function bookAppointment(formData) {
       throw new Error(error || "Failed to deduct credits");
     }
 
-    // Create the appointment with the video session ID
     const appointment = await db.appointment.create({
       data: {
         patientId: patient.id,
@@ -131,11 +98,10 @@ export async function bookAppointment(formData) {
         endTime,
         patientDescription,
         status: "SCHEDULED",
-        videoSessionId: sessionId, // Store the Vonage session ID
+        videoSessionId: sessionId,
       },
     });
 
-        // 💬 CRIA OU BUSCA CHAT EXISTENTE
     let chat = await db.chat.findUnique({
       where: {
         patientId_doctorId: {
@@ -155,12 +121,11 @@ export async function bookAppointment(formData) {
       });
     }
 
-
     revalidatePath("/appointments");
-    return { success: true, appointment: appointment };
+    return { success: true, appointment };
   } catch (error) {
     console.error("Failed to book appointment:", error);
-    throw new Error("Failed to book appointment:" + error.message);
+    throw new Error("Failed to book appointment: " + error.message);
   }
 }
 
@@ -178,120 +143,68 @@ async function createVideoSession() {
 
 /**
  * Generate a token for a video session
- * This will be called when either doctor or patient is about to join the call
  */
 export async function generateVideoToken(formData) {
   const { userId } = await auth();
 
-  if (!userId) {
-    throw new Error("Unauthorized");
-  }
+  if (!userId) throw new Error("Unauthorized");
 
   try {
-    const user = await db.user.findUnique({
-      where: {
-        clerkUserId: userId,
-      },
-    });
-
-    if (!user) {
-      throw new Error("User not found");
-    }
+    const user = await db.user.findUnique({ where: { clerkUserId: userId } });
+    if (!user) throw new Error("User not found");
 
     const appointmentId = formData.get("appointmentId");
+    if (!appointmentId) throw new Error("Appointment ID is required");
 
-    if (!appointmentId) {
-      throw new Error("Appointment ID is required");
-    }
+    const appointment = await db.appointment.findUnique({ where: { id: appointmentId } });
+    if (!appointment) throw new Error("Appointment not found");
 
-    // Find the appointment and verify the user is part of it
-    const appointment = await db.appointment.findUnique({
-      where: {
-        id: appointmentId,
-      },
-    });
-
-    if (!appointment) {
-      throw new Error("Appointment not found");
-    }
-
-    // Verify the user is either the doctor or the patient for this appointment
     if (appointment.doctorId !== user.id && appointment.patientId !== user.id) {
       throw new Error("You are not authorized to join this call");
     }
 
-    // Verify the appointment is scheduled
     if (appointment.status !== "SCHEDULED") {
       throw new Error("This appointment is not currently scheduled");
     }
 
-    // Verify the appointment is within a valid time range (e.g., starting 5 minutes before scheduled time)
     const now = new Date();
     const appointmentTime = new Date(appointment.startTime);
-    const timeDifference = (appointmentTime - now) / (1000 * 60); // difference in minutes
+    const timeDifference = (appointmentTime - now) / (1000 * 60);
 
     if (timeDifference > 30) {
-      throw new Error(
-        "The call will be available 30 minutes before the scheduled time"
-      );
+      throw new Error("The call will be available 30 minutes before the scheduled time");
     }
 
-    // Generate a token for the video session
-    // Token expires 2 hours after the appointment start time
     const appointmentEndTime = new Date(appointment.endTime);
-    const expirationTime =
-      Math.floor(appointmentEndTime.getTime() / 1000) + 60 * 60; // 1 hour after end time
+    const expirationTime = Math.floor(appointmentEndTime.getTime() / 1000) + 60 * 60;
 
-    // Use user's name and role as connection data
-    const connectionData = JSON.stringify({
-      name: user.name,
-      role: user.role,
-      userId: user.id,
-    });
+    const connectionData = JSON.stringify({ name: user.name, role: user.role, userId: user.id });
 
-    // Generate the token with appropriate role and expiration
     const token = vonage.video.generateClientToken(appointment.videoSessionId, {
-      role: "publisher", // Both doctor and patient can publish streams
+      role: "publisher",
       expireTime: expirationTime,
       data: connectionData,
     });
 
-    // Update the appointment with the token
     await db.appointment.update({
-      where: {
-        id: appointmentId,
-      },
-      data: {
-        videoSessionToken: token,
-      },
+      where: { id: appointmentId },
+      data: { videoSessionToken: token },
     });
- let chat = await db.chat.findUnique({
-  where: {
-    patientId_doctorId: {
-      patientId: appointment.patientId,
-      doctorId: appointment.doctorId,
-    },
-  },
-});
 
-if (!chat) {
-  chat = await db.chat.create({
-    data: {
-      patientId: appointment.patientId,
-      doctorId: appointment.doctorId,
-      isActive: true,
-    },
-  });
-}
-    return {
-      success: true,
-      videoSessionId: appointment.videoSessionId,
-      token: token,
-      chatId: chat.id
-    };
+    let chat = await db.chat.findUnique({
+      where: { patientId_doctorId: { patientId: appointment.patientId, doctorId: appointment.doctorId } },
+    });
+
+    if (!chat) {
+      chat = await db.chat.create({
+        data: { patientId: appointment.patientId, doctorId: appointment.doctorId, isActive: true },
+      });
+    }
+
+    return { success: true, videoSessionId: appointment.videoSessionId, token, chatId: chat.id };
   } catch (error) {
     console.error("Failed to generate video token:", error);
-    throw new Error("Failed to generate video token:" + error.message);
+    throw new Error("Failed to generate video token: " + error.message);
   }
 }
 
@@ -301,17 +214,9 @@ if (!chat) {
 export async function getDoctorById(doctorId) {
   try {
     const doctor = await db.user.findUnique({
-      where: {
-        id: doctorId,
-        role: "DOCTOR",
-        verificationStatus: "VERIFIED",
-      },
+      where: { id: doctorId, role: "DOCTOR", verificationStatus: "VERIFIED" },
     });
-
-    if (!doctor) {
-      throw new Error("Doctor not found");
-    }
-
+    if (!doctor) throw new Error("Doctor not found");
     return { doctor };
   } catch (error) {
     console.error("Failed to fetch doctor:", error);
@@ -320,11 +225,10 @@ export async function getDoctorById(doctorId) {
 }
 
 /**
- * Get available time slots for booking for the next 4 days
+ * Get available time slots for the next 4 days
  */
 export async function getAvailableTimeSlots(doctorId) {
   try {
-    // Verifica se o médico existe e está verificado
     const doctor = await db.user.findUnique({
       where: { id: doctorId },
       select: { id: true, role: true, verificationStatus: true },
@@ -334,7 +238,6 @@ export async function getAvailableTimeSlots(doctorId) {
       throw new Error("Doctor not found or not verified");
     }
 
-    // Busca todas as disponibilidades do médico
     const availabilities = await db.availability.findMany({
       where: { doctorId: doctor.id, status: "AVAILABLE" },
     });
@@ -347,67 +250,41 @@ export async function getAvailableTimeSlots(doctorId) {
     const days = [now, addDays(now, 1), addDays(now, 2), addDays(now, 3)];
     const lastDay = endOfDay(days[3]);
 
-    // Compromissos já agendados do médico nos próximos 4 dias
     const existingAppointments = await db.appointment.findMany({
-      where: {
-        doctorId: doctor.id,
-        status: "SCHEDULED",
-        startTime: { lte: lastDay },
-      },
+      where: { doctorId: doctor.id, status: "SCHEDULED", startTime: { lte: lastDay } },
     });
 
-    const availableSlotsByDay: Record<string, any[]> = {};
+    const availableSlotsByDay = {};
 
     for (const day of days) {
       const dayString = format(day, "yyyy-MM-dd");
       availableSlotsByDay[dayString] = [];
 
-      const dayOfWeek = getDay(day); // 0 = domingo, 1 = segunda ...
-
-      // Busca a disponibilidade correspondente ao dia da semana
+      const dayOfWeek = getDay(day);
       const availability = availabilities.find((a) => a.dayOfWeek === dayOfWeek);
       if (!availability) continue;
 
-      // Define horários de início e fim
       let availabilityStart = new Date(availability.startTime);
       let availabilityEnd = new Date(availability.endTime);
-
       availabilityStart.setFullYear(day.getFullYear(), day.getMonth(), day.getDate());
       availabilityEnd.setFullYear(day.getFullYear(), day.getMonth(), day.getDate());
 
-      // Intervalo de pausa, se existir
       let breakStart = availability.breakStart ? new Date(availability.breakStart) : null;
       let breakEnd = availability.breakEnd ? new Date(availability.breakEnd) : null;
-
       if (breakStart) breakStart.setFullYear(day.getFullYear(), day.getMonth(), day.getDate());
       if (breakEnd) breakEnd.setFullYear(day.getFullYear(), day.getMonth(), day.getDate());
 
       let current = new Date(availabilityStart);
-
       while (isBefore(current, availabilityEnd)) {
         const next = addMinutes(current, 30);
 
-        // Ignora slots passados
-        if (isBefore(next, now)) {
-          current = next;
-          continue;
-        }
+        if (isBefore(next, now)) { current = next; continue; }
+        if (breakStart && breakEnd && current < breakEnd && next > breakStart) { current = next; continue; }
 
-        // Ignora slots durante o intervalo de pausa
-        if (breakStart && breakEnd && current < breakEnd && next > breakStart) {
-          current = next;
-          continue;
-        }
-
-        // Ignora slots que conflitam com compromissos existentes
         const overlaps = existingAppointments.some((appt) => {
           const aStart = new Date(appt.startTime);
           const aEnd = new Date(appt.endTime);
-          return (
-            (current >= aStart && current < aEnd) ||
-            (next > aStart && next <= aEnd) ||
-            (current <= aStart && next >= aEnd)
-          );
+          return (current >= aStart && current < aEnd) || (next > aStart && next <= aEnd) || (current <= aStart && next >= aEnd);
         });
 
         if (!overlaps) {
@@ -423,7 +300,6 @@ export async function getAvailableTimeSlots(doctorId) {
       }
     }
 
-    // Converte para array para UI
     const result = Object.entries(availableSlotsByDay).map(([date, slots]) => ({
       date,
       displayDate: slots.length > 0 ? slots[0].day : format(new Date(date), "EEEE, MMMM d"),
@@ -431,7 +307,7 @@ export async function getAvailableTimeSlots(doctorId) {
     }));
 
     return { days: result };
-  } catch (error: any) {
+  } catch (error) {
     console.error("Failed to fetch available slots:", error);
     throw new Error("Failed to fetch available time slots: " + error.message);
   }
