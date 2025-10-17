@@ -34,13 +34,22 @@ model User {
 }
 
 model Availability {
-  id        String     @id @default(uuid())
-  doctorId  String
-  startTime DateTime
-  endTime   DateTime
-  status    SlotStatus @default(AVAILABLE)
-  doctor    User       @relation(fields: [doctorId], references: [id], onDelete: Cascade)
+  id             String      @id @default(uuid())
+  doctorId       String
+  dayOfWeek      Int         // 0 = Domingo, 1 = Segunda, ..., 6 = Sábado
+  startTime      DateTime
+  endTime        DateTime
+  breakStart     DateTime?   // intervalo de almoço opcional
+  breakEnd       DateTime?
+  isRecurring    Boolean     @default(true)  // se se repete semanalmente
+  dateOverride   DateTime?   // opcional: se for uma data específica (exceção)
+  status         SlotStatus  @default(AVAILABLE)
+  createdAt      DateTime    @default(now())
+  updatedAt      DateTime    @updatedAt
+  doctor         User        @relation(fields: [doctorId], references: [id], onDelete: Cascade)
 
+  @@index([doctorId, dayOfWeek])
+  @@index([doctorId, dateOverride])
   @@index([doctorId, startTime])
 }
 
