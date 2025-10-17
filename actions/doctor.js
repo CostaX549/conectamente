@@ -8,38 +8,47 @@ import { revalidatePath } from "next/cache";
 /**
  * Remove availability slots for a given day of week
  */
-export async function removeAvailabilityDay(formData) {
+export async function removeAvailabilitySlot(formData) {
   const { userId } = await auth();
   if (!userId) throw new Error("Unauthorized");
 
+  const slotId = formData.get("slotId");
+
+  if (!slotId) throw new Error("Slot ID is required");
+
   try {
+    // Verifica se o slot existe
+    const slot = await db.availability.findUnique({
+      where: { id: slotId }, // UUID usado diretamente
+    });
+
+    if (!slot) throw new Error("Slot not found");
+
+    // Verifica se o slot pertence ao médico logado
     const doctor = await db.user.findUnique({
       where: { clerkUserId: userId, role: "DOCTOR" },
     });
+
     if (!doctor) throw new Error("Doctor not found");
 
-    const dayOfWeek = parseInt(formData.get("dayOfWeek"));
-    if (isNaN(dayOfWeek) || dayOfWeek < 0 || dayOfWeek > 6)
-      throw new Error("Invalid day of week");
+    if (slot.doctorId !== doctor.id) {
+      throw new Error("Not authorized to remove this slot");
+    }
 
-    // Deleta todas as disponibilidades recorrentes desse dia
-    const deleted = await db.availability.deleteMany({
-      where: {
-        doctorId: doctor.id,
-        dayOfWeek,
-        dateOverride: null, // garante que remove só os recorrentes
-      },
+    // Remove o slot
+    await db.availability.delete({
+      where: { id: slotId },
     });
 
+    // Revalida a página de disponibilidade
     revalidatePath("/doctor");
 
-    return { success: true, deletedCount: deleted.count };
+    return { success: true };
   } catch (error) {
-    console.error("Failed to remove availability:", error);
-    throw new Error("Failed to remove availability: " + error.message);
+    console.error("Failed to remove availability slot:", error);
+    throw new Error("Failed to remove availability slot: " + error.message);
   }
 }
-
 /**
  * Set doctor's availability slots
  */
