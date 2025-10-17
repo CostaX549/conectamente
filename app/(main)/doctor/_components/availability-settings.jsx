@@ -183,7 +183,7 @@ export function AvailabilitySettings({ slots }) {
                   onValueChange={(val) => setValue("dayOfWeek", val)}
                   defaultValue={watch("dayOfWeek")}
                 >
-                  <SelectTrigger className="bg-background border-emerald-900/20 text-white w-full max-w-[180px]">
+                  <SelectTrigger className="bg-background border-emerald-900/20 text-white w-full">
                     <SelectValue placeholder="Selecione um dia" />
                   </SelectTrigger>
                   <SelectContent>
