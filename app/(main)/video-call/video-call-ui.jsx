@@ -54,34 +54,7 @@ const [previews, setPreviews] = useState([]);
   const router = useRouter();
 
   const appId = process.env.NEXT_PUBLIC_VONAGE_APPLICATION_ID;
-useEffect(() => {
-  if (typeof window === "undefined") return;
 
-  if (window.__video_call_loaded__) {
-    window.location.reload();
-  } else {
-    window.__video_call_loaded__ = true;
-  }
-
-  const handlePopState = () => {
-    window.__video_call_loaded__ = false;
-  };
-  window.addEventListener("popstate", handlePopState);
-
-  return () => {
-    window.removeEventListener("popstate", handlePopState);
-    window.__video_call_loaded__ = false;
-
-    if (sessionRef.current) {
-      sessionRef.current.disconnect();
-      sessionRef.current = null;
-    }
-    if (publisherRef.current) {
-      publisherRef.current.destroy();
-      publisherRef.current = null;
-    }
-  };
-}, []);
 
 
  // roda uma vez ao montar
