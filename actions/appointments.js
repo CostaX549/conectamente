@@ -5,7 +5,8 @@ import { auth } from "@clerk/nextjs/server";
 import { revalidatePath } from "next/cache";
 import { deductCreditsForAppointment } from "@/actions/credits";
 import { Vonage } from "@vonage/server-sdk";
-import { addDays, addMinutes, format, isBefore, endOfDay } from "date-fns";
+import { addDays, addMinutes, endOfDay, format, getDay, isBefore } from "date-fns";
+
 import { Auth } from "@vonage/auth";
 
 // Initialize Vonage Video API client
@@ -298,116 +299,86 @@ if (!chat) {
 /**
  * Get doctor by ID
  */
-export async function getDoctorById(doctorId) {
-  try {
-    const doctor = await db.user.findUnique({
-      where: {
-        id: doctorId,
-        role: "DOCTOR",
-        verificationStatus: "VERIFIED",
-      },
-    });
+import { db } from "@/lib/prisma";
+import { addDays, addMinutes, endOfDay, format, getDay, isBefore } from "date-fns";
 
-    if (!doctor) {
-      throw new Error("Doctor not found");
-    }
-
-    return { doctor };
-  } catch (error) {
-    console.error("Failed to fetch doctor:", error);
-    throw new Error("Failed to fetch doctor details");
-  }
-}
-
-/**
- * Get available time slots for booking for the next 4 days
- */
 export async function getAvailableTimeSlots(doctorId) {
   try {
-    // Validate doctor existence and verification
+    // Verifica se o médico existe e está verificado
     const doctor = await db.user.findUnique({
-      where: {
-        id: doctorId,
-        role: "DOCTOR",
-        verificationStatus: "VERIFIED",
-      },
+      where: { id: doctorId, role: "DOCTOR", verificationStatus: "VERIFIED" },
     });
+    if (!doctor) throw new Error("Doctor not found or not verified");
 
-    if (!doctor) {
-      throw new Error("Doctor not found or not verified");
-    }
-
-    // Fetch a single availability record
-    const availability = await db.availability.findFirst({
-      where: {
-        doctorId: doctor.id,
-        status: "AVAILABLE",
-      },
+    // Busca todas as disponibilidades do médico
+    const availabilities = await db.availability.findMany({
+      where: { doctorId: doctor.id, status: "AVAILABLE" },
     });
-
-    if (!availability) {
+    if (!availabilities || availabilities.length === 0)
       throw new Error("No availability set by doctor");
-    }
 
-    // Get the next 4 days
+    // Próximos 4 dias
     const now = new Date();
-
     const days = [now, addDays(now, 1), addDays(now, 2), addDays(now, 3)];
 
-    // Fetch existing appointments for the doctor over the next 4 days
+    // Consulta os compromissos já agendados
     const lastDay = endOfDay(days[3]);
     const existingAppointments = await db.appointment.findMany({
       where: {
         doctorId: doctor.id,
         status: "SCHEDULED",
-        startTime: {
-          lte: lastDay,
-        },
+        startTime: { lte: lastDay },
       },
     });
 
     const availableSlotsByDay = {};
 
-    // For each of the next 4 days, generate available slots
     for (const day of days) {
       const dayString = format(day, "yyyy-MM-dd");
       availableSlotsByDay[dayString] = [];
 
-      // Create a copy of the availability start/end times for this day
-      const availabilityStart = new Date(availability.startTime);
-      const availabilityEnd = new Date(availability.endTime);
+      // Encontra a disponibilidade correspondente ao dia da semana
+      const dayOfWeek = getDay(day); // 0 = domingo
+      const availability = availabilities.find((a) => a.dayOfWeek === dayOfWeek);
+      if (!availability) continue; // Nenhuma disponibilidade para esse dia
 
-      // Set the day to the current day we're processing
-      availabilityStart.setFullYear(
-        day.getFullYear(),
-        day.getMonth(),
-        day.getDate()
-      );
-      availabilityEnd.setFullYear(
-        day.getFullYear(),
-        day.getMonth(),
-        day.getDate()
-      );
+      // Define horários de início e fim
+      let availabilityStart = new Date(availability.startTime);
+      let availabilityEnd = new Date(availability.endTime);
+
+      availabilityStart.setFullYear(day.getFullYear(), day.getMonth(), day.getDate());
+      availabilityEnd.setFullYear(day.getFullYear(), day.getMonth(), day.getDate());
+
+      // Define intervalo de pausa, se existir
+      let breakStart = availability.breakStart
+        ? new Date(availability.breakStart)
+        : null;
+      let breakEnd = availability.breakEnd ? new Date(availability.breakEnd) : null;
+
+      if (breakStart) breakStart.setFullYear(day.getFullYear(), day.getMonth(), day.getDate());
+      if (breakEnd) breakEnd.setFullYear(day.getFullYear(), day.getMonth(), day.getDate());
 
       let current = new Date(availabilityStart);
-      const end = new Date(availabilityEnd);
 
-      while (
-        isBefore(addMinutes(current, 30), end) ||
-        +addMinutes(current, 30) === +end
-      ) {
+      while (isBefore(current, availabilityEnd)) {
         const next = addMinutes(current, 30);
 
-        // Skip past slots
-        if (isBefore(current, now)) {
+        // Ignora slots passados
+        if (isBefore(next, now)) {
           current = next;
           continue;
         }
 
+        // Ignora slots dentro do intervalo de pausa
+        if (breakStart && breakEnd && current < breakEnd && next > breakStart) {
+          current = next;
+          continue;
+        }
+
+        // Ignora slots que conflitam com consultas existentes
         const overlaps = existingAppointments.some((appointment) => {
           const aStart = new Date(appointment.startTime);
           const aEnd = new Date(appointment.endTime);
-
           return (
             (current >= aStart && current < aEnd) ||
             (next > aStart && next <= aEnd) ||
@@ -419,10 +390,7 @@ export async function getAvailableTimeSlots(doctorId) {
           availableSlotsByDay[dayString].push({
             startTime: current.toISOString(),
             endTime: next.toISOString(),
-            formatted: `${format(current, "h:mm a")} - ${format(
-              next,
-              "h:mm a"
-            )}`,
+            formatted: `${format(current, "h:mm a")} - ${format(next, "h:mm a")}`,
             day: format(current, "EEEE, MMMM d"),
           });
         }
@@ -431,13 +399,10 @@ export async function getAvailableTimeSlots(doctorId) {
       }
     }
 
-    // Convert to array of slots grouped by day for easier consumption by the UI
+    // Converte para array para facilitar o consumo na UI
     const result = Object.entries(availableSlotsByDay).map(([date, slots]) => ({
       date,
-      displayDate:
-        slots.length > 0
-          ? slots[0].day
-          : format(new Date(date), "EEEE, MMMM d"),
+      displayDate: slots.length > 0 ? slots[0].day : format(new Date(date), "EEEE, MMMM d"),
       slots,
     }));
 
@@ -447,3 +412,4 @@ export async function getAvailableTimeSlots(doctorId) {
     throw new Error("Failed to fetch available time slots: " + error.message);
   }
 }
+
