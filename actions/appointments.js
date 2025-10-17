@@ -322,7 +322,7 @@ export async function getDoctorById(doctorId) {
 /**
  * Get available time slots for booking for the next 4 days
  */
-export async function getAvailableTimeSlots(doctorId: string) {
+export async function getAvailableTimeSlots(doctorId) {
   try {
     // Verifica se o médico existe e está verificado
     const doctor = await db.user.findUnique({
