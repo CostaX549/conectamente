@@ -14,7 +14,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Clock, Plus, Loader2, Calendar } from "lucide-react";
 import { format } from "date-fns";
-import { setAvailabilitySlots } from "@/actions/doctor";
+import { setAvailabilitySlots, removeAvailabilitySlot } from "@/actions/doctor";
 import useFetch from "@/hooks/use-fetch";
 import { toast } from "sonner";
 import {
@@ -107,11 +107,15 @@ export function AvailabilitySettings({ slots }) {
 
   const handleRemoveSlot = async (slotId) => {
   try {
-   
+    const formData = new FormData();
+    formData.append("slotId", String(slotId));
+
+    // Chama a action server que você criou
+    const result = await removeAvailabilitySlot(formData);
 
     if (result.success) {
       toast.success("Disponibilidade removida com sucesso!");
-      setLocalSlots(localSlots.filter((s) => s.id !== slotId));
+      setLocalSlots((prev) => prev.filter((s) => s.id !== slotId));
     } else {
       toast.error("Falha ao remover disponibilidade.");
     }
@@ -119,7 +123,8 @@ export function AvailabilitySettings({ slots }) {
     console.error(err);
     toast.error("Erro ao remover disponibilidade.");
   }
-}
+};
+
 
   return (
     <Card className="border-emerald-900/20">
