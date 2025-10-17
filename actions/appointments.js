@@ -6,7 +6,6 @@ import { revalidatePath } from "next/cache";
 import { deductCreditsForAppointment } from "@/actions/credits";
 import { Vonage } from "@vonage/server-sdk";
 import { addDays, addMinutes, endOfDay, format, getDay, isBefore } from "date-fns";
-
 import { Auth } from "@vonage/auth";
 
 // Initialize Vonage Video API client
@@ -299,29 +298,56 @@ if (!chat) {
 /**
  * Get doctor by ID
  */
+export async function getDoctorById(doctorId) {
+  try {
+    const doctor = await db.user.findUnique({
+      where: {
+        id: doctorId,
+        role: "DOCTOR",
+        verificationStatus: "VERIFIED",
+      },
+    });
 
+    if (!doctor) {
+      throw new Error("Doctor not found");
+    }
 
-export async function getAvailableTimeSlots(doctorId) {
+    return { doctor };
+  } catch (error) {
+    console.error("Failed to fetch doctor:", error);
+    throw new Error("Failed to fetch doctor details");
+  }
+}
+
+/**
+ * Get available time slots for booking for the next 4 days
+ */
+export async function getAvailableTimeSlots(doctorId: string) {
   try {
     // Verifica se o médico existe e está verificado
     const doctor = await db.user.findUnique({
-      where: { id: doctorId, role: "DOCTOR", verificationStatus: "VERIFIED" },
+      where: { id: doctorId },
+      select: { id: true, role: true, verificationStatus: true },
     });
-    if (!doctor) throw new Error("Doctor not found or not verified");
+
+    if (!doctor || doctor.role !== "DOCTOR" || doctor.verificationStatus !== "VERIFIED") {
+      throw new Error("Doctor not found or not verified");
+    }
 
     // Busca todas as disponibilidades do médico
     const availabilities = await db.availability.findMany({
       where: { doctorId: doctor.id, status: "AVAILABLE" },
     });
-    if (!availabilities || availabilities.length === 0)
-      throw new Error("No availability set by doctor");
 
-    // Próximos 4 dias
+    if (!availabilities || availabilities.length === 0) {
+      throw new Error("No availability set by doctor");
+    }
+
     const now = new Date();
     const days = [now, addDays(now, 1), addDays(now, 2), addDays(now, 3)];
-
-    // Consulta os compromissos já agendados
     const lastDay = endOfDay(days[3]);
+
+    // Compromissos já agendados do médico nos próximos 4 dias
     const existingAppointments = await db.appointment.findMany({
       where: {
         doctorId: doctor.id,
@@ -330,16 +356,17 @@ export async function getAvailableTimeSlots(doctorId) {
       },
     });
 
-    const availableSlotsByDay = {};
+    const availableSlotsByDay: Record<string, any[]> = {};
 
     for (const day of days) {
       const dayString = format(day, "yyyy-MM-dd");
       availableSlotsByDay[dayString] = [];
 
-      // Encontra a disponibilidade correspondente ao dia da semana
-      const dayOfWeek = getDay(day); // 0 = domingo
+      const dayOfWeek = getDay(day); // 0 = domingo, 1 = segunda ...
+
+      // Busca a disponibilidade correspondente ao dia da semana
       const availability = availabilities.find((a) => a.dayOfWeek === dayOfWeek);
-      if (!availability) continue; // Nenhuma disponibilidade para esse dia
+      if (!availability) continue;
 
       // Define horários de início e fim
       let availabilityStart = new Date(availability.startTime);
@@ -348,10 +375,8 @@ export async function getAvailableTimeSlots(doctorId) {
       availabilityStart.setFullYear(day.getFullYear(), day.getMonth(), day.getDate());
       availabilityEnd.setFullYear(day.getFullYear(), day.getMonth(), day.getDate());
 
-      // Define intervalo de pausa, se existir
-      let breakStart = availability.breakStart
-        ? new Date(availability.breakStart)
-        : null;
+      // Intervalo de pausa, se existir
+      let breakStart = availability.breakStart ? new Date(availability.breakStart) : null;
       let breakEnd = availability.breakEnd ? new Date(availability.breakEnd) : null;
 
       if (breakStart) breakStart.setFullYear(day.getFullYear(), day.getMonth(), day.getDate());
@@ -368,16 +393,16 @@ export async function getAvailableTimeSlots(doctorId) {
           continue;
         }
 
-        // Ignora slots dentro do intervalo de pausa
+        // Ignora slots durante o intervalo de pausa
         if (breakStart && breakEnd && current < breakEnd && next > breakStart) {
           current = next;
           continue;
         }
 
-        // Ignora slots que conflitam com consultas existentes
-        const overlaps = existingAppointments.some((appointment) => {
-          const aStart = new Date(appointment.startTime);
-          const aEnd = new Date(appointment.endTime);
+        // Ignora slots que conflitam com compromissos existentes
+        const overlaps = existingAppointments.some((appt) => {
+          const aStart = new Date(appt.startTime);
+          const aEnd = new Date(appt.endTime);
           return (
             (current >= aStart && current < aEnd) ||
             (next > aStart && next <= aEnd) ||
@@ -389,7 +414,7 @@ export async function getAvailableTimeSlots(doctorId) {
           availableSlotsByDay[dayString].push({
             startTime: current.toISOString(),
             endTime: next.toISOString(),
-            formatted: `${format(current, "h:mm a")} - ${format(next, "h:mm a")}`,
+            formatted: `${format(current, "HH:mm")} - ${format(next, "HH:mm")}`,
             day: format(current, "EEEE, MMMM d"),
           });
         }
@@ -398,7 +423,7 @@ export async function getAvailableTimeSlots(doctorId) {
       }
     }
 
-    // Converte para array para facilitar o consumo na UI
+    // Converte para array para UI
     const result = Object.entries(availableSlotsByDay).map(([date, slots]) => ({
       date,
       displayDate: slots.length > 0 ? slots[0].day : format(new Date(date), "EEEE, MMMM d"),
@@ -406,9 +431,8 @@ export async function getAvailableTimeSlots(doctorId) {
     }));
 
     return { days: result };
-  } catch (error) {
+  } catch (error: any) {
     console.error("Failed to fetch available slots:", error);
     throw new Error("Failed to fetch available time slots: " + error.message);
   }
 }
-
