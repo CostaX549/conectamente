@@ -115,7 +115,7 @@ export function AvailabilitySettings({ slots }) {
 
     if (result.success) {
       toast.success("Disponibilidade removida com sucesso!");
-      setLocalSlots((prev) => prev.filter((s) => s.id !== slotId));
+ 
     } else {
       toast.error("Falha ao remover disponibilidade.");
     }
