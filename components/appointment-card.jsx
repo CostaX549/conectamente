@@ -141,7 +141,7 @@ export function AppointmentCard({
     if (tokenLoading) return;
 
     setAction("video");
-
+ setTokenData(undefined);
     const formData = new FormData();
     formData.append("appointmentId", appointment.id);
     await submitTokenRequest(formData);
