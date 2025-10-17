@@ -60,6 +60,7 @@ export function AppointmentCard({
     loading: tokenLoading,
     fn: submitTokenRequest,
     data: tokenData,
+    setData: setTokenData
   } = useFetch(generateVideoToken);
   const {
     loading: completeLoading,
