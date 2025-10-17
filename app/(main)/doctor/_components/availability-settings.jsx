@@ -105,6 +105,22 @@ export function AvailabilitySettings({ slots }) {
 
   const formatTime = (date) => format(new Date(date), "HH:mm");
 
+  const handleRemoveSlot = async (slotId) => {
+  try {
+   
+
+    if (result.success) {
+      toast.success("Disponibilidade removida com sucesso!");
+      setLocalSlots(localSlots.filter((s) => s.id !== slotId));
+    } else {
+      toast.error("Falha ao remover disponibilidade.");
+    }
+  } catch (err) {
+    console.error(err);
+    toast.error("Erro ao remover disponibilidade.");
+  }
+}
+
   return (
     <Card className="border-emerald-900/20">
       <CardHeader>
@@ -131,30 +147,38 @@ export function AvailabilitySettings({ slots }) {
                 </p>
               ) : (
                 <div className="space-y-3">
-                  {slots.map((slot) => (
-                    <div
-                      key={slot.id}
-                      className="flex items-center p-3 rounded-md bg-muted/20 border border-emerald-900/20"
-                    >
-                      <div className="bg-emerald-900/20 p-2 rounded-full mr-3">
-                        <Calendar className="h-4 w-4 text-emerald-400" />
-                      </div>
-                      <div>
-                        <p className="text-white font-medium">
-                          {daysOfWeek.find((d) => d.value === slot.dayOfWeek)
-                            ?.label}{" "}
-                          - {formatTime(slot.startTime)} às{" "}
-                          {formatTime(slot.endTime)}
-                        </p>
-                        {slot.breakStart && slot.breakEnd && (
-                          <p className="text-xs text-muted-foreground">
-                            Intervalo: {formatTime(slot.breakStart)} às{" "}
-                            {formatTime(slot.breakEnd)}
-                          </p>
-                        )}
-                      </div>
-                    </div>
-                  ))}
+                 {slots.map((slot) => (
+  <div
+    key={slot.id}
+    className="flex items-center justify-between p-3 rounded-md bg-muted/20 border border-emerald-900/20"
+  >
+    <div className="flex items-center">
+      <div className="bg-emerald-900/20 p-2 rounded-full mr-3">
+        <Calendar className="h-4 w-4 text-emerald-400" />
+      </div>
+      <div>
+        <p className="text-white font-medium">
+          {daysOfWeek.find((d) => d.value === slot.dayOfWeek)?.label} -{" "}
+          {formatTime(slot.startTime)} às {formatTime(slot.endTime)}
+        </p>
+        {slot.breakStart && slot.breakEnd && (
+          <p className="text-xs text-muted-foreground">
+            Intervalo: {formatTime(slot.breakStart)} às {formatTime(slot.breakEnd)}
+          </p>
+        )}
+      </div>
+    </div>
+
+    <Button
+      size="sm"
+      variant="destructive"
+      onClick={() => handleRemoveSlot(slot.id)}
+    >
+      Remover
+    </Button>
+  </div>
+))}
+
                 </div>
               )}
             </div>
