@@ -299,8 +299,7 @@ if (!chat) {
 /**
  * Get doctor by ID
  */
-import { db } from "@/lib/prisma";
-import { addDays, addMinutes, endOfDay, format, getDay, isBefore } from "date-fns";
+
 
 export async function getAvailableTimeSlots(doctorId) {
   try {
