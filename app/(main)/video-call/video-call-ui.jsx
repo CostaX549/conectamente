@@ -30,6 +30,9 @@ import {
   SheetTrigger,
 } from "@/components/ui/sheet";
 
+
+
+
 export default function VideoCall({ sessionId, token, chatId }) {
   const [isLoading, setIsLoading] = useState(true);
   const [scriptLoaded, setScriptLoaded] = useState(false);
@@ -52,16 +55,36 @@ const [previews, setPreviews] = useState([]);
 
   const appId = process.env.NEXT_PUBLIC_VONAGE_APPLICATION_ID;
 useEffect(() => {
-  // Garante que não há sessão antiga pendente
-  if (window.OT && sessionRef.current) {
-    try {
+  if (typeof window === "undefined") return;
+
+  if (window.__video_call_loaded__) {
+    window.location.reload();
+  } else {
+    window.__video_call_loaded__ = true;
+  }
+
+  const handlePopState = () => {
+    window.__video_call_loaded__ = false;
+  };
+  window.addEventListener("popstate", handlePopState);
+
+  return () => {
+    window.removeEventListener("popstate", handlePopState);
+    window.__video_call_loaded__ = false;
+
+    if (sessionRef.current) {
       sessionRef.current.disconnect();
       sessionRef.current = null;
-    } catch (err) {
-      console.warn("Sessão anterior já finalizada");
     }
-  }
-}, []); // roda uma vez ao montar
+    if (publisherRef.current) {
+      publisherRef.current.destroy();
+      publisherRef.current = null;
+    }
+  };
+}, []);
+
+
+ // roda uma vez ao montar
 
   // 🔹 Carregar apenas as mensagens
   useEffect(() => {
