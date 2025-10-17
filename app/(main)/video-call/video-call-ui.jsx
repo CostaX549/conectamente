@@ -275,7 +275,7 @@ const handleFileUpload = (files) => {
   return (
     <>
       <Script
-          key={`vonage-${Date.now()}`}
+            key="vonage-script"
         src="https://unpkg.com/@vonage/client-sdk-video@latest/dist/js/opentok.js"
         onLoad={handleScriptLoad}
         onError={() => {
