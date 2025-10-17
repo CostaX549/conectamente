@@ -12,80 +12,67 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Clock, Plus, Loader2, AlertCircle } from "lucide-react";
+import { Clock, Plus, Loader2, Calendar } from "lucide-react";
 import { format } from "date-fns";
 import { setAvailabilitySlots } from "@/actions/doctor";
 import useFetch from "@/hooks/use-fetch";
 import { toast } from "sonner";
 
+const daysOfWeek = [
+  { label: "Domingo", value: 0 },
+  { label: "Segunda-feira", value: 1 },
+  { label: "Terça-feira", value: 2 },
+  { label: "Quarta-feira", value: 3 },
+  { label: "Quinta-feira", value: 4 },
+  { label: "Sexta-feira", value: 5 },
+  { label: "Sábado", value: 6 },
+];
+
 export function AvailabilitySettings({ slots }) {
   const [showForm, setShowForm] = useState(false);
-
-  // Hook customizado para ação no servidor
   const { loading, fn: submitSlots, data } = useFetch(setAvailabilitySlots);
 
-  // React Hook Form
   const {
     register,
     handleSubmit,
     formState: { errors },
   } = useForm({
     defaultValues: {
+      dayOfWeek: 1,
       startTime: "",
       endTime: "",
+      breakStart: "",
+      breakEnd: "",
     },
   });
 
-  function createLocalDateFromTime(timeStr) {
+  const createLocalDateFromTime = (timeStr) => {
     const [hours, minutes] = timeStr.split(":").map(Number);
     const now = new Date();
-    const date = new Date(
-      now.getFullYear(),
-      now.getMonth(),
-      now.getDate(),
-      hours,
-      minutes
-    );
-    return date;
-  }
+    return new Date(now.getFullYear(), now.getMonth(), now.getDate(), hours, minutes);
+  };
 
-  // Envio do slot
   const onSubmit = async (data) => {
     if (loading) return;
 
     const formData = new FormData();
-
-    // Criar objetos de data
-    const startDate = createLocalDateFromTime(data.startTime);
-    const endDate = createLocalDateFromTime(data.endTime);
-
-    if (startDate >= endDate) {
-      toast.error("O horário de término deve ser depois do horário de início");
-      return;
-    }
-
-    // Adicionar ao formData
-    formData.append("startTime", startDate.toISOString());
-    formData.append("endTime", endDate.toISOString());
+    formData.append("dayOfWeek", data.dayOfWeek);
+    formData.append("startTime", createLocalDateFromTime(data.startTime).toISOString());
+    formData.append("endTime", createLocalDateFromTime(data.endTime).toISOString());
+    if (data.breakStart) formData.append("breakStart", createLocalDateFromTime(data.breakStart).toISOString());
+    if (data.breakEnd) formData.append("breakEnd", createLocalDateFromTime(data.breakEnd).toISOString());
 
     await submitSlots(formData);
   };
 
   useEffect(() => {
-    if (data && data?.success) {
+    if (data?.success) {
       setShowForm(false);
-      toast.success("Horários de disponibilidade atualizados com sucesso");
+      toast.success("Disponibilidade salva com sucesso!");
     }
   }, [data]);
 
-  // Formatar hora para exibição
-  const formatTimeString = (dateString) => {
-    try {
-      return format(new Date(dateString), "HH:mm");
-    } catch (e) {
-      return "Horário inválido";
-    }
-  };
+  const formatTime = (date) => format(new Date(date), "HH:mm");
 
   return (
     <Card className="border-emerald-900/20">
@@ -95,41 +82,34 @@ export function AvailabilitySettings({ slots }) {
           Configurações de Disponibilidade
         </CardTitle>
         <CardDescription>
-          Defina sua disponibilidade diária para consultas com pacientes
+          Defina sua disponibilidade diária para consultas
         </CardDescription>
       </CardHeader>
+
       <CardContent>
-        {/* Exibição da disponibilidade atual */}
         {!showForm ? (
           <>
             <div className="mb-6">
-              <h3 className="text-lg font-medium text-white mb-3">
-                Disponibilidade Atual
-              </h3>
+              <h3 className="text-lg font-medium text-white mb-3">Disponibilidade Atual</h3>
 
               {slots.length === 0 ? (
-                <p className="text-muted-foreground">
-                  Você ainda não definiu horários de disponibilidade. Adicione
-                  seus horários para começar a aceitar consultas.
-                </p>
+                <p className="text-muted-foreground">Nenhum horário definido ainda.</p>
               ) : (
                 <div className="space-y-3">
                   {slots.map((slot) => (
-                    <div
-                      key={slot.id}
-                      className="flex items-center p-3 rounded-md bg-muted/20 border border-emerald-900/20"
-                    >
+                    <div key={slot.id} className="flex items-center p-3 rounded-md bg-muted/20 border border-emerald-900/20">
                       <div className="bg-emerald-900/20 p-2 rounded-full mr-3">
-                        <Clock className="h-4 w-4 text-emerald-400" />
+                        <Calendar className="h-4 w-4 text-emerald-400" />
                       </div>
                       <div>
                         <p className="text-white font-medium">
-                          {formatTimeString(slot.startTime)} -{" "}
-                          {formatTimeString(slot.endTime)}
+                          {daysOfWeek.find((d) => d.value === slot.dayOfWeek)?.label} - {formatTime(slot.startTime)} às {formatTime(slot.endTime)}
                         </p>
-                        <p className="text-xs text-muted-foreground">
-                          {slot.appointment ? "Agendado" : "Disponível"}
-                        </p>
+                        {slot.breakStart && slot.breakEnd && (
+                          <p className="text-xs text-muted-foreground">
+                            Intervalo: {formatTime(slot.breakStart)} às {formatTime(slot.breakEnd)}
+                          </p>
+                        )}
                       </div>
                     </div>
                   ))}
@@ -137,99 +117,54 @@ export function AvailabilitySettings({ slots }) {
               )}
             </div>
 
-            <Button
-              onClick={() => setShowForm(true)}
-              className="w-full bg-emerald-600 hover:bg-emerald-700"
-            >
+            <Button onClick={() => setShowForm(true)} className="w-full bg-emerald-600 hover:bg-emerald-700">
               <Plus className="h-4 w-4 mr-2" />
               Definir Horário de Disponibilidade
             </Button>
           </>
         ) : (
-          <form
-            onSubmit={handleSubmit(onSubmit)}
-            className="space-y-4 border border-emerald-900/20 rounded-md p-4"
-          >
-            <h3 className="text-lg font-medium text-white mb-2">
-              Definir Disponibilidade Diária
-            </h3>
+          <form onSubmit={handleSubmit(onSubmit)} className="space-y-4 border border-emerald-900/20 rounded-md p-4">
+            <h3 className="text-lg font-medium text-white mb-2">Nova Disponibilidade</h3>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="startTime">Horário de Início</Label>
-                <Input
-                  id="startTime"
-                  type="time"
-                  {...register("startTime", {
-                    required: "O horário de início é obrigatório",
-                  })}
-                  className="bg-background border-emerald-900/20"
-                />
-                {errors.startTime && (
-                  <p className="text-sm font-medium text-red-500">
-                    {errors.startTime.message}
-                  </p>
-                )}
+              <div>
+                <Label>Dia da Semana</Label>
+                <select {...register("dayOfWeek")} className="w-full p-2 bg-background border-emerald-900/20 rounded-md text-white">
+                  {daysOfWeek.map((day) => (
+                    <option key={day.value} value={day.value}>{day.label}</option>
+                  ))}
+                </select>
               </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="endTime">Horário de Término</Label>
-                <Input
-                  id="endTime"
-                  type="time"
-                  {...register("endTime", {
-                    required: "O horário de término é obrigatório",
-                  })}
-                  className="bg-background border-emerald-900/20"
-                />
-                {errors.endTime && (
-                  <p className="text-sm font-medium text-red-500">
-                    {errors.endTime.message}
-                  </p>
-                )}
+              <div>
+                <Label>Horário de Início</Label>
+                <Input type="time" {...register("startTime", { required: true })} className="bg-background border-emerald-900/20" />
+              </div>
+
+              <div>
+                <Label>Horário de Término</Label>
+                <Input type="time" {...register("endTime", { required: true })} className="bg-background border-emerald-900/20" />
+              </div>
+
+              <div>
+                <Label>Início do Intervalo (opcional)</Label>
+                <Input type="time" {...register("breakStart")} className="bg-background border-emerald-900/20" />
+              </div>
+
+              <div>
+                <Label>Fim do Intervalo (opcional)</Label>
+                <Input type="time" {...register("breakEnd")} className="bg-background border-emerald-900/20" />
               </div>
             </div>
 
-            <div className="flex justify-end space-x-3 pt-2">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => setShowForm(false)}
-                disabled={loading}
-                className="border-emerald-900/30"
-              >
-                Cancelar
-              </Button>
-              <Button
-                type="submit"
-                disabled={loading}
-                className="bg-emerald-600 hover:bg-emerald-700"
-              >
-                {loading ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Salvando...
-                  </>
-                ) : (
-                  "Salvar Disponibilidade"
-                )}
+            <div className="flex justify-end gap-3 pt-2">
+              <Button variant="outline" type="button" onClick={() => setShowForm(false)}>Cancelar</Button>
+              <Button type="submit" disabled={loading} className="bg-emerald-600 hover:bg-emerald-700">
+                {loading ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Salvando...</> : "Salvar"}
               </Button>
             </div>
           </form>
         )}
-
-        <div className="mt-6 p-4 bg-muted/10 border border-emerald-900/10 rounded-md">
-          <h4 className="font-medium text-white mb-2 flex items-center">
-            <AlertCircle className="h-4 w-4 mr-2 text-emerald-400" />
-            Como Funciona a Disponibilidade
-          </h4>
-          <p className="text-muted-foreground text-sm">
-            Definir sua disponibilidade diária permite que os pacientes agendem
-            consultas nesses horários. A mesma disponibilidade se aplica a todos
-            os dias. Você pode atualizar sua disponibilidade a qualquer momento,
-            mas os agendamentos já feitos não serão afetados.
-          </p>
-        </div>
       </CardContent>
     </Card>
   );
