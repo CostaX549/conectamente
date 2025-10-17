@@ -175,14 +175,25 @@ export function AppointmentCard({
   }, [notesData, refetchAppointments, router]);
 
   useEffect(() => {
-    if (tokenData?.success) {
-      router.push(
-        `/video-call?sessionId=${tokenData.videoSessionId}&token=${tokenData.token}&appointmentId=${appointment.id}&chatId=${tokenData.chatId}`
-      );
-    } else if (tokenData?.error) {
-      setAction(null);
-    }
-  }, [tokenData, appointment.id, router]);
+  if (!tokenData) return; // evita rodar sem dados
+
+  if (tokenData.success) {
+    // usa async/await dentro de função anônima para evitar race conditions
+    (async () => {
+      try {
+        await router.push(
+          `/video-call?sessionId=${tokenData.videoSessionId}&token=${tokenData.token}&appointmentId=${appointment.id}&chatId=${tokenData.chatId}`
+        );
+      } catch (err) {
+        console.error("Erro ao redirecionar:", err);
+      }
+    })();
+  } else if (tokenData.error) {
+    setAction(null);
+    toast.error("Erro ao gerar token de vídeo.");
+  }
+}, [tokenData, appointment.id]); // ⚠️ só depende do necessário
+
 
   const isAppointmentActive = () => {
     const now = new Date();
