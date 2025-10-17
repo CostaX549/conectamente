@@ -51,6 +51,17 @@ const [previews, setPreviews] = useState([]);
   const router = useRouter();
 
   const appId = process.env.NEXT_PUBLIC_VONAGE_APPLICATION_ID;
+useEffect(() => {
+  // Garante que não há sessão antiga pendente
+  if (window.OT && sessionRef.current) {
+    try {
+      sessionRef.current.disconnect();
+      sessionRef.current = null;
+    } catch (err) {
+      console.warn("Sessão anterior já finalizada");
+    }
+  }
+}, []); // roda uma vez ao montar
 
   // 🔹 Carregar apenas as mensagens
   useEffect(() => {
@@ -268,6 +279,7 @@ const handleFileUpload = (files) => {
   return (
     <>
       <Script
+          key={`vonage-${Date.now()}`}
         src="https://unpkg.com/@vonage/client-sdk-video@latest/dist/js/opentok.js"
         onLoad={handleScriptLoad}
         onError={() => {
