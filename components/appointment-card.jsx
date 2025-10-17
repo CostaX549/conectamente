@@ -234,18 +234,23 @@ export function AppointmentCard({
 
           {/* Status + ações */}
           <div className="flex flex-col items-start gap-3 mt-3 w-full">
-            <Badge
-              variant="outline"
-              className={
-                appointment.status === "COMPLETED"
-                  ? "bg-emerald-900/20 border-emerald-900/30 text-emerald-400"
-                  : appointment.status === "CANCELLED"
-                  ? "bg-red-900/20 border-red-900/30 text-red-400"
-                  : "bg-amber-900/20 border-amber-900/30 text-amber-400"
-              }
-            >
-              {appointment.status}
-            </Badge>
+           <Badge
+  variant="outline"
+  className={
+    appointment.status === "COMPLETED"
+      ? "bg-emerald-900/20 border-emerald-900/30 text-emerald-400"
+      : appointment.status === "CANCELLED"
+      ? "bg-red-900/20 border-red-900/30 text-red-400"
+      : "bg-amber-900/20 border-amber-900/30 text-amber-400"
+  }
+>
+  {{
+    SCHEDULED: "Agendada",
+    COMPLETED: "Concluída",
+    CANCELLED: "Cancelada",
+  }[appointment.status] || appointment.status}
+</Badge>
+
 
             <div className="flex flex-col gap-2 w-full">
               {canMarkCompleted() && (
@@ -345,17 +350,22 @@ export function AppointmentCard({
                 Status
               </h4>
               <Badge
-                variant="outline"
-                className={
-                  appointment.status === "COMPLETED"
-                    ? "bg-emerald-900/20 border-emerald-900/30 text-emerald-400"
-                    : appointment.status === "CANCELLED"
-                    ? "bg-red-900/20 border-red-900/30 text-red-400"
-                    : "bg-amber-900/20 border-amber-900/30 text-amber-400"
-                }
-              >
-                {appointment.status}
-              </Badge>
+  variant="outline"
+  className={
+    appointment.status === "COMPLETED"
+      ? "bg-emerald-900/20 border-emerald-900/30 text-emerald-400"
+      : appointment.status === "CANCELLED"
+      ? "bg-red-900/20 border-red-900/30 text-red-400"
+      : "bg-amber-900/20 border-amber-900/30 text-amber-400"
+  }
+>
+  {{
+    SCHEDULED: "Agendada",
+    COMPLETED: "Concluída",
+    CANCELLED: "Cancelada",
+  }[appointment.status] || appointment.status}
+</Badge>
+
             </div>
 
             {/* Descrição do paciente */}
