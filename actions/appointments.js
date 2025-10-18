@@ -243,7 +243,7 @@ export async function getAvailableTimeSlots(doctorId) {
     });
 
     if (!availabilities || availabilities.length === 0) {
-      throw new Error("No availability set by doctor");
+       return { days: [] };
     }
 
     const now = new Date();
