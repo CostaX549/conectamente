@@ -86,7 +86,7 @@ export function DoctorEarnings({ earnings, payouts = [] }) {
                   {availableCredits}
                 </p>
                 <p className="text-xs text-muted-foreground">
-                  R${availablePayout.toFixed(2)} disponíveis para saque
+                  ${availablePayout.toFixed(2)} disponíveis para saque
                 </p>
               </div>
               <div className="bg-emerald-900/20 p-3 rounded-full">
@@ -102,7 +102,7 @@ export function DoctorEarnings({ earnings, payouts = [] }) {
               <div>
                 <p className="text-sm text-muted-foreground">Este Mês</p>
                 <p className="text-3xl font-bold text-white">
-                  R${thisMonthEarnings.toFixed(2)}
+                  ${thisMonthEarnings.toFixed(2)}
                 </p>
               </div>
               <div className="bg-emerald-900/20 p-3 rounded-full">
@@ -137,7 +137,7 @@ export function DoctorEarnings({ earnings, payouts = [] }) {
               <div>
                 <p className="text-sm text-muted-foreground">Média/Mês</p>
                 <p className="text-3xl font-bold text-white">
-                  R${averageEarningsPerMonth.toFixed(2)}
+                  ${averageEarningsPerMonth.toFixed(2)}
                 </p>
               </div>
               <div className="bg-emerald-900/20 p-3 rounded-full">
@@ -192,7 +192,7 @@ export function DoctorEarnings({ earnings, payouts = [] }) {
                   <div>
                     <p className="text-muted-foreground">Valor Pendente</p>
                     <p className="text-white font-medium">
-                      R${pendingPayout.netAmount.toFixed(2)}
+                      ${pendingPayout.netAmount.toFixed(2)}
                     </p>
                   </div>
                   <div>
@@ -220,13 +220,13 @@ export function DoctorEarnings({ earnings, payouts = [] }) {
                 <div>
                   <p className="text-muted-foreground">Valor para Saque</p>
                   <p className="text-white font-medium">
-                    R${availablePayout.toFixed(2)}
+                    ${availablePayout.toFixed(2)}
                   </p>
                 </div>
                 <div>
                   <p className="text-muted-foreground">Taxa da Plataforma</p>
                   <p className="text-white font-medium">
-                    R${platformFee.toFixed(2)}
+                    ${platformFee.toFixed(2)}
                   </p>
                 </div>
               </div>
@@ -255,8 +255,8 @@ export function DoctorEarnings({ earnings, payouts = [] }) {
           <Alert>
             <AlertCircle className="h-4 w-4" />
             <AlertDescription className="text-sm">
-              <strong>Estrutura de Saque:</strong> Você ganha R$8 por crédito.
-              A taxa da plataforma é R$2 por crédito. Os saques incluem todos
+              <strong>Estrutura de Saque:</strong> Você ganha $8 por crédito.
+              A taxa da plataforma é $2 por crédito. Os saques incluem todos
               os créditos disponíveis e são processados via PayPal.
             </AlertDescription>
           </Alert>
@@ -276,7 +276,7 @@ export function DoctorEarnings({ earnings, payouts = [] }) {
                         {format(new Date(payout.createdAt), "MMM d, yyyy")}
                       </p>
                       <p className="text-sm text-muted-foreground">
-                        {payout.credits} créditos • R${payout.netAmount.toFixed(2)}
+                        {payout.credits} créditos • ${payout.netAmount.toFixed(2)}
                       </p>
                       <p className="text-xs text-muted-foreground">
                         {payout.paypalEmail}
@@ -323,19 +323,19 @@ export function DoctorEarnings({ earnings, payouts = [] }) {
               <div className="flex justify-between">
                 <span className="text-muted-foreground">Valor bruto:</span>
                 <span className="text-white">
-                  R${(availableCredits * 10).toFixed(2)}
+                  ${(availableCredits * 10).toFixed(2)}
                 </span>
               </div>
               <div className="flex justify-between">
                 <span className="text-muted-foreground">
                   Taxa da plataforma (20%):
                 </span>
-                <span className="text-white">-R${platformFee.toFixed(2)}</span>
+                <span className="text-white">-${platformFee.toFixed(2)}</span>
               </div>
               <div className="border-t border-emerald-900/20 pt-2 flex justify-between font-medium">
                 <span className="text-white">Valor líquido:</span>
                 <span className="text-emerald-400">
-                  R${availablePayout.toFixed(2)}
+                  ${availablePayout.toFixed(2)}
                 </span>
               </div>
             </div>
@@ -360,7 +360,7 @@ export function DoctorEarnings({ earnings, payouts = [] }) {
               <AlertCircle className="h-4 w-4" />
               <AlertDescription className="text-sm">
                 Após o processamento pelo administrador, {availableCredits} créditos
-                serão deduzidos da sua conta e R${availablePayout.toFixed(2)} serão
+                serão deduzidos da sua conta e ${availablePayout.toFixed(2)} serão
                 enviados para seu PayPal.
               </AlertDescription>
             </Alert>
