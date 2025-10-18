@@ -237,7 +237,7 @@ export function PendingPayouts({ payouts }) {
                   </div>
                   <div className="flex justify-between">
                     <span className="text-muted-foreground">
-                      Valor bruto (10 BRL/crédito):
+                      Valor bruto (10 USD/crédito):
                     </span>
                     <span className="text-white">
                       ${selectedPayout.amount.toFixed(2)}
@@ -245,7 +245,7 @@ export function PendingPayouts({ payouts }) {
                   </div>
                   <div className="flex justify-between">
                     <span className="text-muted-foreground">
-                      Taxa da plataforma (2 BRL/crédito):
+                      Taxa da plataforma (2 USD/crédito):
                     </span>
                     <span className="text-white">
                       -${selectedPayout.platformFee.toFixed(2)}
