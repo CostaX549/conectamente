@@ -46,7 +46,7 @@ export default async function PricingPage() {
           Dúvidas? Estamos aqui para te ajudar
         </h2>
         <p className="text-muted-foreground mb-4">
-          Contate nosso time de suporte em support@medimeet.com
+          Contate nosso time de suporte em support@conectamente.com
         </p>
       </div>
     </div>
