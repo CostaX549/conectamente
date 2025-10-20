@@ -278,7 +278,11 @@ export async function getAvailableTimeSlots(doctorId) {
       while (isBefore(current, availabilityEnd)) {
         const next = addMinutes(current, 30);
 
-        if (isBefore(next, now)) { current = next; continue; }
+      if (next.getTime() < now.getTime()) {
+  current = next;
+  continue;
+}
+
         if (breakStart && breakEnd && current < breakEnd && next > breakStart) { current = next; continue; }
 
         const overlaps = existingAppointments.some((appt) => {
