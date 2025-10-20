@@ -248,7 +248,7 @@ export async function getAvailableTimeSlots(doctorId) {
     }
 
    
-    const now = new Date();
+    const now = new Date(); //s
     const days = [now, addDays(now, 1), addDays(now, 2), addDays(now, 3)];
     const lastDay = endOfDay(days[3]);
 
