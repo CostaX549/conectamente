@@ -7,6 +7,7 @@ import { deductCreditsForAppointment } from "@/actions/credits";
 import { Vonage } from "@vonage/server-sdk";
 import { addDays, addMinutes, endOfDay, format, getDay, isBefore } from "date-fns";
 import { Auth } from "@vonage/auth";
+import { utcToZonedTime } from "date-fns-tz";
 
 // Initialize Vonage Video API client
 const credentials = new Auth({
@@ -246,7 +247,7 @@ export async function getAvailableTimeSlots(doctorId) {
        return { days: [] };
     }
 
-    const now = new Date();
+   const now = utcToZonedTime(new Date(), timezone);
     const days = [now, addDays(now, 1), addDays(now, 2), addDays(now, 3)];
     const lastDay = endOfDay(days[3]);
 
