@@ -77,32 +77,33 @@ export function AppointmentForm({ doctorId, slot, onBack, onComplete }) {
         </p>
       </div>
 
-      <div className="flex justify-between pt-2">
-        <Button
-          type="button"
-          variant="outline"
-          onClick={onBack}
-          disabled={loading}
-          className="border-emerald-900/30"
-        >
-          <ArrowLeft className="mr-2 h-4 w-4" />
-          Alterar Horário
-        </Button>
-        <Button
-          type="submit"
-          disabled={loading}
-          className="bg-emerald-600 hover:bg-emerald-700"
-        >
-          {loading ? (
-            <>
-              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              Agendando...
-            </>
-          ) : (
-            "Confirmar Agendamento"
-          )}
-        </Button>
-      </div>
+     <div className="flex flex-col sm:flex-row justify-between pt-2 gap-2">
+  <Button
+    type="button"
+    variant="outline"
+    onClick={onBack}
+    disabled={loading}
+    className="border-emerald-900/30 w-full sm:w-auto"
+  >
+    <ArrowLeft className="mr-2 h-4 w-4" />
+    Alterar Horário
+  </Button>
+  <Button
+    type="submit"
+    disabled={loading}
+    className="bg-emerald-600 hover:bg-emerald-700 w-full sm:w-auto"
+  >
+    {loading ? (
+      <>
+        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+        Agendando...
+      </>
+    ) : (
+      "Confirmar Agendamento"
+    )}
+  </Button>
+</div>
+
     </form>
   );
 }
