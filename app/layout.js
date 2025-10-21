@@ -6,7 +6,7 @@ import { ClerkProvider } from "@clerk/nextjs";
 import { dark } from "@clerk/themes";
 import { ptBR } from "@clerk/localizations";
 import { Toaster } from "sonner";
-
+import { ProgressBar } from "@/components/progress-bar"
 
 const inter = Inter({ subsets: ["latin"] })
 
@@ -23,9 +23,13 @@ export default function RootLayout({ children }) {
      localization={ptBR}
     >
     <html lang="en"  suppressHydrationWarning>
+       <head>
+        <link rel="stylesheet" href="/nprogress.css" />
+      </head>
       <body
         className={`${inter.className}`}
       >
+            <ProgressBar />
          <ThemeProvider
             attribute="class"
             defaultTheme="dark"
