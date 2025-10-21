@@ -6,7 +6,7 @@ import { ClerkProvider } from "@clerk/nextjs";
 import { dark } from "@clerk/themes";
 import { ptBR } from "@clerk/localizations";
 import { Toaster } from "sonner";
-import  ProgressBar  from "@/components/progress-bar"
+import ProgressBarProvider from "@/components/ProgressBarProvider";
 
 const inter = Inter({ subsets: ["latin"] })
 
@@ -29,7 +29,7 @@ export default function RootLayout({ children }) {
       <body
         className={`${inter.className}`}
       >
-            <ProgressBar />
+           <ProgressBarProvider>
          <ThemeProvider
             attribute="class"
             defaultTheme="dark"
@@ -47,6 +47,7 @@ export default function RootLayout({ children }) {
           </div>
         </footer>
         </ThemeProvider>
+        </ProgressBarProvider> 
       </body>
     </html>
     </ClerkProvider>
