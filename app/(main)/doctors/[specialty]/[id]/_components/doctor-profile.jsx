@@ -55,6 +55,7 @@ export function DoctorProfile({ doctor, availableDays }) {
   };
 
   const handleBookingComplete = () => {
+    router.prefetch("/appointments");
     router.push("/appointments");
   };
 

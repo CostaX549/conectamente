@@ -26,9 +26,7 @@ export default function RootLayout({ children }) {
      localization={ptBR}
     >
     <html lang="en"  suppressHydrationWarning>
-       <head>
-        <Link prefetch rel="stylesheet" href="/nprogress.css" />
-      </head>
+      
       <body
         className={`${inter.className}`}
       >
