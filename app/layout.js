@@ -1,3 +1,5 @@
+"use client"
+
 import { Inter } from "next/font/google";
 import "./globals.css";
 import { ThemeProvider } from "@/components/theme-provider"
@@ -6,7 +8,7 @@ import { ClerkProvider } from "@clerk/nextjs";
 import { dark } from "@clerk/themes";
 import { ptBR } from "@clerk/localizations";
 import { Toaster } from "sonner";
-import ProgressBarProvider from "@/components/ProgressBarProvider";
+import { AppProgressBar as ProgressBar } from 'next-nprogress-bar';
 
 const inter = Inter({ subsets: ["latin"] })
 
@@ -29,7 +31,12 @@ export default function RootLayout({ children }) {
       <body
         className={`${inter.className}`}
       >
-           <ProgressBarProvider>
+        <ProgressBar
+            height="4px"
+            color="#047857" // verde escuro
+            options={{ showSpinner: false }}
+            shallowRouting
+          />
          <ThemeProvider
             attribute="class"
             defaultTheme="dark"
@@ -47,7 +54,7 @@ export default function RootLayout({ children }) {
           </div>
         </footer>
         </ThemeProvider>
-        </ProgressBarProvider> 
+    
       </body>
     </html>
     </ClerkProvider>
