@@ -5,8 +5,8 @@ import { ShieldCheck, AlertCircle, Users, CreditCard } from "lucide-react";
 import  PageHeader  from "@/components/page-header";
 
 export const metadata = {
-  title: "Admin Settings - MediMeet",
-  description: "Manage doctors, patients, and platform settings",
+  title: "ConectaMente - Configurações do Administrador",
+  description: "Gerencie médicos, pacientes e configurações da plataforma",
 };
 
 export default async function AdminLayout({ children }) {
