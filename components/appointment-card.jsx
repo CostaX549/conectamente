@@ -166,25 +166,20 @@ export function AppointmentCard({
     }
   }, [completeData, refetchAppointments, router]);
 
-  useEffect(() => {
-    if (notesData?.success) {
-      toast.success("Notas salvas com sucesso");
-      setAction(null);
-      if (refetchAppointments) refetchAppointments();
-      else router.refresh();
-    }
-  }, [notesData, refetchAppointments, router]);
-
-  useEffect(() => {
+ useEffect(() => {
   if (!tokenData) return; // evita rodar sem dados
 
   if (tokenData.success) {
     // usa async/await dentro de função anônima para evitar race conditions
     (async () => {
       try {
-        await router.push(
-          `/video-call?sessionId=${tokenData.videoSessionId}&token=${tokenData.token}&appointmentId=${appointment.id}&chatId=${tokenData.chatId}`
-        );
+        const videoUrl = `/video-call?sessionId=${tokenData.videoSessionId}&token=${tokenData.token}&appointmentId=${appointment.id}&chatId=${tokenData.chatId}`;
+
+        // Prefetch da rota antes de redirecionar
+        await router.prefetch(videoUrl);
+
+        // Depois faz o push
+        await router.push(videoUrl);
       } catch (err) {
         console.error("Erro ao redirecionar:", err);
       }
@@ -193,7 +188,8 @@ export function AppointmentCard({
     setAction(null);
     toast.error("Erro ao gerar token de vídeo.");
   }
-}, [tokenData, appointment.id]); // ⚠️ só depende do necessário
+}, [tokenData, appointment.id]);
+
 
 
   const isAppointmentActive = () => {
