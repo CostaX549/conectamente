@@ -39,7 +39,9 @@ export default function RootLayout({ children }) {
           >
         {/* header */}
         <Header />
-        <main className="min-h-screen"><Providers>{children}</Providers></main>
+   <Providers>
+              <main className="min-h-screen">{children}</main>
+            </Providers>
         <Toaster richColors />
         {/* footer */}
         <footer className="bg-muted/50 py-12">
