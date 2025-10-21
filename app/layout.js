@@ -8,7 +8,7 @@ import { ClerkProvider } from "@clerk/nextjs";
 import { dark } from "@clerk/themes";
 import { ptBR } from "@clerk/localizations";
 import { Toaster } from "sonner";
-import Providers from "@/components/ProgressBarProvider";
+
 
 
 const inter = Inter({ subsets: ["latin"] })
@@ -39,9 +39,9 @@ export default function RootLayout({ children }) {
           >
         {/* header */}
         <Header />
-   <Providers>
+
               <main className="min-h-screen">{children}</main>
-            </Providers>
+           
         <Toaster richColors />
         {/* footer */}
         <footer className="bg-muted/50 py-12">
