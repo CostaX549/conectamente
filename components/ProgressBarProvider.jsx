@@ -6,13 +6,14 @@ import { AppProgressBar as ProgressBar } from 'next-nprogress-bar';
 const Providers = ({ children }) => {
   return (
     <>
-      {children}
+    
       <ProgressBar
         height="4px"
         color="rgba(0, 255, 234, 1)ff"
         options={{ showSpinner: false }}
         shallowRouting
       />
+        {children}
     </>
   );
 };

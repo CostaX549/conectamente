@@ -553,12 +553,7 @@ export function AppointmentCard({
               )}
             </div>
 
-            <Button
-              onClick={() => setOpen(false)}
-              className="bg-emerald-600 hover:bg-emerald-700"
-            >
-              Fechar
-            </Button>
+           
           </DialogFooter>
         </DialogContent>
       </Dialog>
