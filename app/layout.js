@@ -6,7 +6,7 @@ import { ClerkProvider } from "@clerk/nextjs";
 import { dark } from "@clerk/themes";
 import { ptBR } from "@clerk/localizations";
 import { Toaster } from "sonner";
-import { ProgressBar } from "@/components/progress-bar"
+import  ProgressBar  from "@/components/progress-bar"
 
 const inter = Inter({ subsets: ["latin"] })
 
