@@ -222,7 +222,11 @@ export function AppointmentCard({
             <div className="flex items-center gap-2 text-emerald-400">
               <div className="bg-muted/20 rounded-full p-2">{otherPartyIcon}</div>
               <h3 className="font-semibold text-white text-lg">
-                {userRole === "DOCTOR" ? otherParty.name : `Dr. ${otherParty.name}`}
+               {(
+    userRole === "DOCTOR" 
+      ? otherParty.name 
+      : `Dr. ${otherParty.name}`
+  )?.replace(/null/g, "").trim() || "Sem nome"}
               </h3>
             </div>
 
@@ -295,7 +299,7 @@ export function AppointmentCard({
 
       {/* Diálogo de detalhes da consulta */}
       <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent className="w-full max-w-full  mx-auto overflow-x-auto">
+      <DialogContent className="w-full max-w-2xl mx-auto overflow-x-hidden p-6 sm:p-8">
           <DialogHeader>
             <DialogTitle className="text-xl font-bold text-white">
               Detalhes da Consulta
@@ -319,9 +323,11 @@ export function AppointmentCard({
                 </div>
                 <div>
                   <p className="text-white font-medium">
-                    {userRole === "DOCTOR"
-                      ? otherParty.name
-                      : `Dr. ${otherParty.name}`}
+                     {(
+    userRole === "DOCTOR" 
+      ? otherParty.name 
+      : `Dr. ${otherParty.name}`
+  )?.replace(/null/g, "").trim() || "Sem nome"}
                   </p>
                   {userRole === "DOCTOR" && (
                     <p className="text-muted-foreground text-sm">
