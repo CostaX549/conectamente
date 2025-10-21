@@ -96,13 +96,13 @@ export default async function VerificationPage() {
                     variant="outline"
                     className="border-emerald-900/30"
                   >
-                    <Link href="/">Voltar para a Página Inicial</Link>
+                    <Link prefetch href="/">Voltar para a Página Inicial</Link>
                   </Button>
                   <Button
                     asChild
                     className="bg-emerald-600 hover:bg-emerald-700"
                   >
-                    <Link href="/doctor/update-profile">Atualizar Perfil</Link>
+                    <Link prefetch href="/doctor/update-profile">Atualizar Perfil</Link>
                   </Button>
                 </>
               ) : (
@@ -112,13 +112,13 @@ export default async function VerificationPage() {
                     variant="outline"
                     className="border-emerald-900/30"
                   >
-                    <Link href="/">Voltar para a Página Inicial</Link>
+                    <Link prefetch href="/">Voltar para a Página Inicial</Link>
                   </Button>
                   <Button
                     asChild
                     className="bg-emerald-600 hover:bg-emerald-700"
                   >
-                    <Link href="/contact-support">Contatar Suporte</Link>
+                    <Link prefetch href="/contact-support">Contatar Suporte</Link>
                   </Button>
                 </>
               )}

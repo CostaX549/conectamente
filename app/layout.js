@@ -1,4 +1,4 @@
-"use client"
+
 
 import { Inter } from "next/font/google";
 import "./globals.css";
@@ -8,7 +8,8 @@ import { ClerkProvider } from "@clerk/nextjs";
 import { dark } from "@clerk/themes";
 import { ptBR } from "@clerk/localizations";
 import { Toaster } from "sonner";
-import { AppProgressBar as ProgressBar } from 'next-nprogress-bar';
+import Providers from "@/components/ProgressBarProvider";
+
 
 const inter = Inter({ subsets: ["latin"] })
 
@@ -26,17 +27,12 @@ export default function RootLayout({ children }) {
     >
     <html lang="en"  suppressHydrationWarning>
        <head>
-        <link rel="stylesheet" href="/nprogress.css" />
+        <Link prefetch rel="stylesheet" href="/nprogress.css" />
       </head>
       <body
         className={`${inter.className}`}
       >
-        <ProgressBar
-            height="4px"
-            color="#047857" // verde escuro
-            options={{ showSpinner: false }}
-            shallowRouting
-          />
+       
          <ThemeProvider
             attribute="class"
             defaultTheme="dark"
@@ -45,7 +41,7 @@ export default function RootLayout({ children }) {
           >
         {/* header */}
         <Header />
-        <main className="min-h-screen">{children}</main>
+        <main className="min-h-screen"><Providers>{children}</Providers></main>
         <Toaster richColors />
         {/* footer */}
         <footer className="bg-muted/50 py-12">

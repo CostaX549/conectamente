@@ -11,7 +11,7 @@ const PageHeader = ({
 }) => {
   return (
     <div className="flex flex-col justify-between gap-5 mb-8">
-      <Link href={backLink}>
+      <Link prefetch href={backLink}>
           <Button 
           variant="outline" 
           size="sm" 

@@ -45,7 +45,7 @@ export function DoctorCard({ doctor }) {
               asChild
               className="w-full bg-emerald-500 hover:bg-emerald-600 mt-2"
             >
-              <Link prefetch href={`/doctors/${doctor.specialty}/${doctor.id}`}>
+              <Link prefetch  href={`/doctors/${doctor.specialty}/${doctor.id}`}>
                 <Calendar className="h-4 w-4 mr-2" />
                 Ver perfil e Agendar
               </Link>

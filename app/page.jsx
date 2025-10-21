@@ -25,7 +25,7 @@ export default function Home() {
             </p>
             <div className="flex flex-wrap justify-center lg:justify-start gap-4">
               <Button size="lg" asChild className="bg-emerald-600 hover:bg-emerald-700">
-                <Link href="/onboarding">
+                <Link prefetch href="/onboarding">
                   Começar <ArrowRight className="ml-2 h-4 w-4" />
                 </Link>
               </Button>
@@ -35,7 +35,7 @@ export default function Home() {
                 className="border-emerald-800/40 hover:bg-emerald-900/30"
                 asChild
               >
-                <Link href="/doctors">Ver psicólogos</Link>
+                <Link prefetch href="/doctors">Ver psicólogos</Link>
               </Button>
             </div>
           </div>
@@ -170,7 +170,7 @@ export default function Home() {
               className="bg-emerald-600 text-white hover:bg-emerald-700"
               asChild
             >
-              <Link
+              <Link prefetch
                 href="https://wa.me/5512991789979"
                 target="_blank"
                 rel="noopener noreferrer"

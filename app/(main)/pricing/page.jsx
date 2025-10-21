@@ -11,7 +11,7 @@ export default async function PricingPage() {
     <div className="container mx-auto px-4 py-12">
       {/* Header Section */}
       <div className="flex justify-start mb-2">
-        <Link
+        <Link prefetch
           href="/"
           className="flex items-center text-muted-foreground hover:text-white transition-colors"
         >

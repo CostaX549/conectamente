@@ -16,7 +16,7 @@ const Header = async () => {
   return (
     <header className="fixed top-0  w-full border-b bg-background/80 backdrop-blur-md z-50 supports-[backdrop-filter]:bg-background/60">
         <nav className="container mx-auto px-4 h-16 flex items-center justify-between">
-            <Link href="/">
+            <Link prefetch href="/">
             <Image
             src="/logo-single.png"
             alt="Medimeet logo"
@@ -29,7 +29,7 @@ const Header = async () => {
 
               <SignedIn>
                  {user?.role === "ADMIN" && (
-              <Link href="/admin">
+              <Link prefetch href="/admin">
                 <Button
                   variant="outline"
                   className="hidden md:inline-flex items-center gap-2"
@@ -44,7 +44,7 @@ const Header = async () => {
             )}
                      {user?.role === "DOCTOR" && (
                            <div className="flex gap-2">
-              <Link href="/doctor">
+              <Link prefetch href="/doctor">
                 <Button
                   variant="outline"
                   className="hidden md:inline-flex items-center gap-2"
@@ -56,7 +56,7 @@ const Header = async () => {
                   <Stethoscope className="h-4 w-4" />
                 </Button>
               </Link>
-              <Link href="/chat">
+              <Link prefetch href="/chat">
   <Button variant="outline" className="hidden md:inline-flex items-center gap-2">
     <MessageCircle className="h-4 w-4" />
     Chat
@@ -69,7 +69,7 @@ const Header = async () => {
             )}
                 {user?.role === "PATIENT" && (
                   <div className="flex gap-2">
-              <Link href="/appointments">
+              <Link prefetch href="/appointments">
                 <Button
                   variant="outline"
                   className="hidden md:inline-flex items-center gap-2"
@@ -82,7 +82,7 @@ const Header = async () => {
                 </Button>
               </Link>
               {/* Botão de Chat */}
-<Link href="/chat">
+<Link prefetch href="/chat">
   <Button variant="outline" className="hidden md:inline-flex items-center gap-2">
     <MessageCircle className="h-4 w-4" />
     Chat
@@ -94,7 +94,7 @@ const Header = async () => {
 </div>
             )}
                 {user?.role === "UNASSIGNED" && (
-                  <Link href="/onboarding">
+                  <Link prefetch href="/onboarding">
                     <Button variant="outline" className="hidden md:inline-flex items-center gap-2">
                       <User className="h-4 w-4" />
                       Completar Perfil
@@ -107,7 +107,7 @@ const Header = async () => {
                 )}
               </SignedIn>
               {(!user || user?.role === "PATIENT") && (
-  <Link href="/pricing">
+  <Link prefetch href="/pricing">
     <Badge
       variant="outline"
       className="h-9 bg-emerald-900/20 border-emerald-700/30 px-3 py-1 flex items-center gap-2"
