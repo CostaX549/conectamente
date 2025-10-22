@@ -170,6 +170,7 @@ export default function VideoCall({ sessionId, token, chatId }) {
       const devices = await navigator.mediaDevices.enumerateDevices();
       setHasVideoDevice(devices.some((d) => d.kind === "videoinput"));
       setHasAudioDevice(devices.some((d) => d.kind === "audioinput"));
+      console.log(hasAudioDevice);
     } catch (err) {
       console.warn("Erro ao verificar dispositivos:", err);
       toast.error("Não foi possível verificar dispositivos de áudio/vídeo");
@@ -308,31 +309,37 @@ export default function VideoCall({ sessionId, token, chatId }) {
                 <div className="bg-emerald-900/10 px-3 py-2 text-emerald-400 text-sm font-medium">
                   Você
                 </div>
-                <div
-                  id="publisher"
-                  className="w-full aspect-video bg-muted/30 relative flex items-center justify-center"
-                >
-                  {(!hasVideoDevice || !scriptLoaded) && (
-                    <div className="absolute inset-0 flex flex-col items-center justify-center text-center p-6">
-                      {currentUser?.imageUrl ? (
-                        <img
-                          src={currentUser.imageUrl}
-                          alt={currentUser.name || "Usuário"}
-                          className="w-24 h-24 rounded-full object-cover border-2 border-emerald-700 mb-2"
-                        />
-                      ) : (
-                        <div className="bg-emerald-800/30 p-6 rounded-full">
-                          <User className="h-12 w-12 text-emerald-400" />
-                        </div>
-                      )}
-                      <p className="text-emerald-400 mt-2 text-sm">
-                        {hasVideoDevice
-                          ? "Inicializando vídeo..."
-                          : "Sem câmera disponível"}
-                      </p>
-                    </div>
-                  )}
-                </div>
+               <div
+  id="publisher"
+  className="w-full aspect-video bg-muted/30 relative flex items-center justify-center"
+>
+  {(!scriptLoaded || !isConnected || (!hasVideoDevice && !hasAudioDevice)) && (
+    <div className="absolute inset-0 flex flex-col items-center justify-center text-center p-6 bg-emerald-950/20 backdrop-blur-sm">
+      {currentUser?.imageUrl ? (
+        <img
+          src={currentUser.imageUrl}
+          alt={currentUser.name || "Usuário"}
+          className="w-24 h-24 rounded-full object-cover border-2 border-emerald-700 mb-2"
+        />
+      ) : (
+        <div className="bg-emerald-800/30 p-6 rounded-full">
+          <User className="h-12 w-12 text-emerald-400" />
+        </div>
+      )}
+
+      <p className="text-emerald-400 mt-2 text-sm">
+        {!hasVideoDevice && hasAudioDevice
+          ? "Transmitindo apenas áudio"
+          : hasVideoDevice && !hasAudioDevice
+          ? "Transmitindo apenas vídeo"
+          : !hasVideoDevice && !hasAudioDevice
+          ? "Sem câmera nem microfone disponíveis"
+          : "Inicializando chamada..."}
+      </p>
+    </div>
+  )}
+</div>
+
               </div>
 
               {/* Subscriber */}
