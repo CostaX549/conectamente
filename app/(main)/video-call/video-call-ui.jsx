@@ -37,11 +37,7 @@ export default function VideoCall({ sessionId, token, chatId }) {
   const [isAudioEnabled, setIsAudioEnabled] = useState(true);
   const [isChatOpen, setIsChatOpen] = useState(false);
 
-const [devices, setDevices] = useState({
-  hasVideo: false,
-  hasAudio: false,
-});
-
+  const [devices, setDevices] = useState({ hasVideo: false, hasAudio: false });
   const [currentUser, setCurrentUser] = useState(null);
   const [messages, setMessages] = useState([]);
   const [newMessage, setNewMessage] = useState("");
@@ -167,40 +163,39 @@ const [devices, setDevices] = useState({
   };
 
   // 🔹 Verificar dispositivos
-const checkDevices = async () => {
-  try {
-    const devicesList = await navigator.mediaDevices.enumerateDevices();
-    const hasVideo = devicesList.some((d) => d.kind === "videoinput");
-    const hasAudio = devicesList.some((d) => d.kind === "audioinput");
+  const checkDevices = async () => {
+    try {
+      const devicesList = await navigator.mediaDevices.enumerateDevices();
+      const hasVideo = devicesList.some((d) => d.kind === "videoinput");
+      const hasAudio = devicesList.some((d) => d.kind === "audioinput");
 
-    let videoAvailable = false;
-    let audioAvailable = false;
+      let videoAvailable = false;
+      let audioAvailable = false;
 
-    if (hasVideo) {
-      try {
-        const stream = await navigator.mediaDevices.getUserMedia({ video: true });
-        videoAvailable = true;
-        stream.getTracks().forEach((t) => t.stop());
-      } catch {}
+      if (hasVideo) {
+        try {
+          const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+          videoAvailable = true;
+          stream.getTracks().forEach((t) => t.stop());
+        } catch {}
+      }
+
+      if (hasAudio) {
+        try {
+          const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+          audioAvailable = true;
+          stream.getTracks().forEach((t) => t.stop());
+        } catch {}
+      }
+
+      setDevices({ hasVideo: videoAvailable, hasAudio: audioAvailable });
+      return { videoAvailable, audioAvailable };
+    } catch (err) {
+      console.warn(err);
+      setDevices({ hasVideo: false, hasAudio: false });
+      return { videoAvailable: false, audioAvailable: false };
     }
-
-    if (hasAudio) {
-      try {
-        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-        audioAvailable = true;
-        stream.getTracks().forEach((t) => t.stop());
-      } catch {}
-    }
-
-    setDevices({ hasVideo: videoAvailable, hasAudio: audioAvailable });
-    return { videoAvailable, audioAvailable }; // ✅ retorna os valores reais
-  } catch (err) {
-    console.warn(err);
-    setDevices({ hasVideo: false, hasAudio: false });
-    return { videoAvailable: false, audioAvailable: false };
-  }
-};
-
+  };
 
   // 🔹 Carregar script do Vonage
   const handleScriptLoad = async () => {
@@ -211,7 +206,7 @@ const checkDevices = async () => {
       return;
     }
     const { videoAvailable, audioAvailable } = await checkDevices();
-  initializeSession(videoAvailable, audioAvailable);
+    initializeSession(videoAvailable, audioAvailable);
   };
 
   // 🔹 Inicializar sessão
@@ -238,12 +233,12 @@ const checkDevices = async () => {
         setIsConnected(true);
         setIsLoading(false);
 
-   if (!videoAvailable && !audioAvailable) {
-  toast.info("Nenhum dispositivo de áudio/vídeo detectado. Você entrará sem transmitir áudio ou vídeo.");
-  return;
-}
-
-
+        if (!videoAvailable && !audioAvailable) {
+          toast.info(
+            "Nenhum dispositivo de áudio/vídeo detectado. Você entrará sem transmitir áudio ou vídeo."
+          );
+          return;
+        }
 
         publisherRef.current = window.OT.initPublisher(
           "publisher",
@@ -251,10 +246,10 @@ const checkDevices = async () => {
             insertMode: "replace",
             width: "100%",
             height: "100%",
-              publishAudio: isAudioEnabled,
-        publishVideo: isVideoEnabled,
-       videoSource: videoAvailable ? undefined : null, 
-    audioSource: audioAvailable ? undefined : null, 
+            publishAudio: isAudioEnabled,
+            publishVideo: isVideoEnabled,
+            videoSource: videoAvailable ? undefined : null,
+            audioSource: audioAvailable ? undefined : null,
           },
           (error) => error && toast.error("Erro ao inicializar câmera/microfone")
         );
@@ -319,7 +314,11 @@ const checkDevices = async () => {
         <div className="text-center mb-6">
           <h1 className="text-3xl font-bold text-white mb-2">Consulta por Vídeo</h1>
           <p className="text-muted-foreground">
-            {isConnected ? "Conectado" : isLoading ? "Conectando..." : "Falha na conexão"}
+            {isConnected
+              ? "Conectado"
+              : isLoading
+              ? "Conectando..."
+              : "Falha na conexão"}
           </p>
         </div>
 
@@ -333,9 +332,8 @@ const checkDevices = async () => {
         ) : (
           <div className="space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {/* Publisher */}
-
-                <div className="border border-emerald-900/20 rounded-lg overflow-hidden">
+              {/* Publisher */}
+              <div className="border border-emerald-900/20 rounded-lg overflow-hidden">
                 <div className="bg-emerald-900/10 px-3 py-2 text-emerald-400 text-sm font-medium">
                   Você
                 </div>
@@ -349,7 +347,6 @@ const checkDevices = async () => {
                   )}
                 </div>
               </div>
-            </div>
 
               {/* Subscriber */}
               <div className="border border-emerald-900/20 rounded-lg overflow-hidden">
