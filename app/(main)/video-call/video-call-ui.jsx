@@ -200,7 +200,7 @@ const checkDevices = async () => {
     setHasAudioDevice(audioAvailable);
 
     console.log("Dispositivos realmente disponíveis:", { videoAvailable, audioAvailable });
-
+   console.log(hasAudioDevice);
     if (!videoAvailable && !audioAvailable) {
       toast.info("Nenhum dispositivo de áudio ou vídeo disponível.");
     }
