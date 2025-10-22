@@ -402,11 +402,9 @@ export function AppointmentCard({
                 <h4 className="text-sm font-medium text-muted-foreground">
                   Consulta por Vídeo
                 </h4>
-               <Button
+            <Button
   className="w-full bg-emerald-600 hover:bg-emerald-700 whitespace-normal break-words text-center px-3 py-2 leading-snug"
-  disabled={
-    !isAppointmentActive() || action === "video" || tokenLoading
-  }
+  disabled={action === "video" || tokenLoading}
   onClick={handleJoinVideoCall}
 >
   {tokenLoading || action === "video" ? (
@@ -418,13 +416,12 @@ export function AppointmentCard({
     <>
       <Video className="h-4 w-4 mr-2 flex-shrink-0" />
       <span className="text-sm sm:text-base">
-        {isAppointmentActive()
-          ? "Entrar na Consulta"
-          : "A consulta estará disponível 30 minutos antes do horário"}
+        Entrar na Consulta
       </span>
     </>
   )}
 </Button>
+
 
               </div>
             )}
