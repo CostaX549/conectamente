@@ -215,9 +215,13 @@ export default function VideoCall({ sessionId, token, chatId }) {
         setIsConnected(true);
         setIsLoading(false);
 
-       if (!hasVideoDevice && !hasAudioDevice) {
-  toast.info("Nenhum dispositivo de áudio/vídeo detectado. Você entrará sem transmitir áudio ou vídeo.");
-}
+      if (!hasVideoDevice && !hasAudioDevice) {
+    toast.info(
+      "Nenhum dispositivo de áudio/vídeo detectado. Você entrará sem transmitir áudio ou vídeo."
+    );
+    return; // Não inicializa o publisher
+  }
+
 
         publisherRef.current = window.OT.initPublisher(
           "publisher",
