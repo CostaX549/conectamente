@@ -334,20 +334,22 @@ const checkDevices = async () => {
           <div className="space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {/* Publisher */}
-<div className="border border-emerald-900/20 rounded-lg overflow-hidden">
-  <div className="bg-emerald-900/10 px-3 py-2 text-emerald-400 text-sm font-medium">
-    Você
-  </div>
 
-  <div
-  id="publisher"
-  className="w-full aspect-video bg-muted/30 border border-emerald-900/20 rounded-lg overflow-hidden"
->
- 
-</div>
-
-</div>
-
+                <div className="border border-emerald-900/20 rounded-lg overflow-hidden">
+                <div className="bg-emerald-900/10 px-3 py-2 text-emerald-400 text-sm font-medium">
+                  Você
+                </div>
+                <div id="publisher" className="w-full aspect-video bg-muted/30">
+                  {(!isConnected || !scriptLoaded) && (
+                    <div className="flex items-center justify-center h-full">
+                      <div className="bg-muted/20 rounded-full p-8">
+                        <User className="h-12 w-12 text-emerald-400" />
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
 
               {/* Subscriber */}
               <div className="border border-emerald-900/20 rounded-lg overflow-hidden">
