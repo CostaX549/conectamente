@@ -7,7 +7,6 @@ import { toast } from "sonner";
 import Image from "next/image";
 import { getChatMessages, sendMessage } from "@/actions/chat";
 import { getCurrentUser } from "@/actions/onboarding";
-
 import { pusherClient } from "@/lib/pusher";
 import {
   Loader2,
@@ -30,9 +29,6 @@ import {
   SheetTrigger,
 } from "@/components/ui/sheet";
 
-
-
-
 export default function VideoCall({ sessionId, token, chatId }) {
   const [isLoading, setIsLoading] = useState(true);
   const [scriptLoaded, setScriptLoaded] = useState(false);
@@ -41,12 +37,14 @@ export default function VideoCall({ sessionId, token, chatId }) {
   const [isAudioEnabled, setIsAudioEnabled] = useState(true);
   const [isChatOpen, setIsChatOpen] = useState(false);
 
+  const [hasVideoDevice, setHasVideoDevice] = useState(false);
+  const [hasAudioDevice, setHasAudioDevice] = useState(false);
+
   const [currentUser, setCurrentUser] = useState(null);
   const [messages, setMessages] = useState([]);
   const [newMessage, setNewMessage] = useState("");
-const [newMessageFiles, setNewMessageFiles] = useState([]);
-const [previews, setPreviews] = useState([]);
-
+  const [newMessageFiles, setNewMessageFiles] = useState([]);
+  const [previews, setPreviews] = useState([]);
 
   const messagesEndRef = useRef(null);
   const sessionRef = useRef(null);
@@ -55,20 +53,14 @@ const [previews, setPreviews] = useState([]);
 
   const appId = process.env.NEXT_PUBLIC_VONAGE_APPLICATION_ID;
 
-
-
- // roda uma vez ao montar
-
-  // 🔹 Carregar apenas as mensagens
+  // 🔹 Carregar mensagens
   useEffect(() => {
     if (!chatId) return;
 
     const loadMessages = async () => {
       try {
         const messagesData = await getChatMessages(chatId);
-        console.log(messagesData)
         setMessages(messagesData?.messages || []);
-      
       } catch (err) {
         toast.error("Erro ao carregar mensagens do chat");
       }
@@ -88,111 +80,115 @@ const [previews, setPreviews] = useState([]);
 
   // 🔹 Pusher — escutar novas mensagens
   useEffect(() => {
-  if (!chatId) return;
+    if (!chatId) return;
 
-  const channel = pusherClient.subscribe(`chat-${chatId}`);
-  const handleNewMessage = (message) => {
-    setMessages((prev) => {
-      const exists = prev.some((m) => m.id === message.id);
-      if (exists) return prev;
+    const channel = pusherClient.subscribe(`chat-${chatId}`);
+    const handleNewMessage = (message) => {
+      setMessages((prev) => {
+        const exists = prev.some((m) => m.id === message.id);
+        if (exists) return prev;
 
-      const normalize = (txt) => (txt ?? "").trim();
-      const tempIndex = prev.findIndex(
-        (m) =>
-          m.pending &&
-          m.senderId === message.senderId &&
-          normalize(m.content) === normalize(message.content)
-      );
+        const normalize = (txt) => (txt ?? "").trim();
+        const tempIndex = prev.findIndex(
+          (m) =>
+            m.pending &&
+            m.senderId === message.senderId &&
+            normalize(m.content) === normalize(message.content)
+        );
 
-      if (tempIndex !== -1) {
-        // 🔹 Atualiza a mensagem temporária sem alterar a ordem
-        const updated = [...prev];
-        updated[tempIndex] = {
-          ...message,
-          pending: false,
-        };
-        return updated;
-      }
+        if (tempIndex !== -1) {
+          const updated = [...prev];
+          updated[tempIndex] = { ...message, pending: false };
+          return updated;
+        }
 
-      // 🔹 Caso não exista temporária, adiciona normalmente no final
-      return [...prev, message];
-    });
-  };
+        return [...prev, message];
+      });
+    };
 
-  channel.bind("new-message", handleNewMessage);
-  return () => {
-    channel.unbind("new-message", handleNewMessage);
-    pusherClient.unsubscribe(`chat-${chatId}`);
-  };
-}, [chatId]);
+    channel.bind("new-message", handleNewMessage);
+    return () => {
+      channel.unbind("new-message", handleNewMessage);
+      pusherClient.unsubscribe(`chat-${chatId}`);
+    };
+  }, [chatId]);
 
-useEffect(() => {
-  if (messagesEndRef.current) {
-    messagesEndRef.current.scrollIntoView({ behavior: "smooth" });
-  }
-}, [messages]);
+  // 🔹 Scroll automático
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [messages]);
+
   // 🔹 Enviar mensagem
   const handleSendMessage = async () => {
     if (!currentUser) return;
     const tempId = `temp-${Date.now()}`;
-  const tempMessage = {
-    id: tempId,
-    senderId: currentUser.id,
-    content: newMessage,
-   files: newMessageFiles.map((file, i) => ({
-    id: `temp-file-${i}`,
-    url: file.type.startsWith("image/")
-      ? previews[i] || URL.createObjectURL(file)
-      : "", // ainda sem preview visual
-    filename: file.name,
-    mimetype: file.type,
-  })),
-    pending: true,
-  };
+    const tempMessage = {
+      id: tempId,
+      senderId: currentUser.id,
+      content: newMessage,
+      files: newMessageFiles.map((file, i) => ({
+        id: `temp-file-${i}`,
+        url: file.type.startsWith("image/")
+          ? previews[i] || URL.createObjectURL(file)
+          : "",
+        filename: file.name,
+        mimetype: file.type,
+      })),
+      pending: true,
+    };
 
-  // Mostra imediatamente no chat
-  setMessages(prev => [...prev, tempMessage]);
+    setMessages((prev) => [...prev, tempMessage]);
     const formData = new FormData();
     formData.append("chatId", chatId);
     formData.append("content", newMessage);
-  newMessageFiles.forEach(file => formData.append("files", file));
+    newMessageFiles.forEach((file) => formData.append("files", file));
     setNewMessage("");
- setNewMessageFiles([]);
+    setNewMessageFiles([]);
     setPreviews([]);
+
     try {
       await sendMessage(formData);
-        
     } catch {
       toast.error("Erro ao enviar a mensagem");
     }
   };
 
-  // 🔹 Inicializar Vonage Video
-  const handleScriptLoad = () => {
+  // 🔹 Upload de arquivos
+  const handleFileUpload = (files) => {
+    if (!files || files.length === 0) return;
+    const selectedFiles = Array.from(files);
+    setNewMessageFiles((prev) => [...prev, ...selectedFiles]);
+    const imagePreviews = selectedFiles
+      .filter((file) => file.type.startsWith("image/"))
+      .map((file) => URL.createObjectURL(file));
+    setPreviews((prev) => [...prev, ...imagePreviews]);
+  };
+
+  // 🔹 Verificar dispositivos
+  const checkDevices = async () => {
+    try {
+      const devices = await navigator.mediaDevices.enumerateDevices();
+      setHasVideoDevice(devices.some((d) => d.kind === "videoinput"));
+      setHasAudioDevice(devices.some((d) => d.kind === "audioinput"));
+    } catch (err) {
+      console.warn("Erro ao verificar dispositivos:", err);
+      toast.error("Não foi possível verificar dispositivos de áudio/vídeo");
+    }
+  };
+
+  // 🔹 Carregar script do Vonage
+  const handleScriptLoad = async () => {
     setScriptLoaded(true);
     if (!window.OT) {
       toast.error("Falha ao carregar Vonage Video API");
       setIsLoading(false);
       return;
     }
+    await checkDevices();
     initializeSession();
   };
-const handleFileUpload = (files) => {
-  if (!files || files.length === 0) return;
 
-  const selectedFiles = Array.from(files);
-  setNewMessageFiles(prev => [...prev, ...selectedFiles]);
-
-  // Prévias apenas de imagens
-  const imagePreviews = selectedFiles
-    .filter(file => file.type.startsWith("image/"))
-    .map(file => URL.createObjectURL(file));
-
-  setPreviews(prev => [...prev, ...imagePreviews]);
-};
-
-
-
+  // 🔹 Inicializar sessão
   const initializeSession = () => {
     if (!appId || !sessionId || !token) {
       toast.error("Parâmetros obrigatórios ausentes");
@@ -215,27 +211,33 @@ const handleFileUpload = (files) => {
       sessionRef.current.on("sessionConnected", () => {
         setIsConnected(true);
         setIsLoading(false);
+
+        if (!hasVideoDevice && !hasAudioDevice) {
+          toast.info("Nenhum dispositivo de áudio/vídeo detectado.");
+          return;
+        }
+
         publisherRef.current = window.OT.initPublisher(
           "publisher",
           {
             insertMode: "replace",
             width: "100%",
             height: "100%",
-            publishAudio: isAudioEnabled,
-            publishVideo: isVideoEnabled,
+            publishAudio: hasAudioDevice && isAudioEnabled,
+            publishVideo: hasVideoDevice && isVideoEnabled,
           },
           (error) => error && toast.error("Erro ao inicializar câmera/microfone")
         );
+
+        sessionRef.current.publish(publisherRef.current, (error) => {
+          if (error) toast.error("Erro ao publicar seu stream");
+        });
       });
 
       sessionRef.current.on("sessionDisconnected", () => setIsConnected(false));
 
       sessionRef.current.connect(token, (error) => {
-        if (!error && publisherRef.current) {
-          sessionRef.current.publish(publisherRef.current, (error) => {
-            if (error) toast.error("Erro ao publicar seu stream");
-          });
-        }
+        if (error) toast.error("Falha ao conectar à sessão");
       });
     } catch {
       toast.error("Falha ao inicializar chamada de vídeo");
@@ -243,7 +245,7 @@ const handleFileUpload = (files) => {
     }
   };
 
-  // 🔹 Controles de áudio/vídeo
+  // 🔹 Controles
   const toggleVideo = () => {
     if (publisherRef.current) {
       publisherRef.current.publishVideo(!isVideoEnabled);
@@ -264,7 +266,6 @@ const handleFileUpload = (files) => {
     router.push("/appointments");
   };
 
-  // Cleanup
   useEffect(() => {
     return () => {
       publisherRef.current?.destroy();
@@ -275,7 +276,7 @@ const handleFileUpload = (files) => {
   return (
     <>
       <Script
-            key="vonage-script"
+        key="vonage-script"
         src="https://unpkg.com/@vonage/client-sdk-video@latest/dist/js/opentok.js"
         onLoad={handleScriptLoad}
         onError={() => {
@@ -307,15 +308,28 @@ const handleFileUpload = (files) => {
                 <div className="bg-emerald-900/10 px-3 py-2 text-emerald-400 text-sm font-medium">
                   Você
                 </div>
-          <div
-  id="publisher"
-    className="w-full aspect-video bg-muted/30"
->
-                  {!scriptLoaded && (
-                    <div className="flex items-center justify-center h-full">
-                      <div className="bg-muted/20 rounded-full p-8">
-                        <User className="h-12 w-12 text-emerald-400" />
-                      </div>
+                <div
+                  id="publisher"
+                  className="w-full aspect-video bg-muted/30 relative flex items-center justify-center"
+                >
+                  {(!hasVideoDevice || !scriptLoaded) && (
+                    <div className="absolute inset-0 flex flex-col items-center justify-center text-center p-6">
+                      {currentUser?.imageUrl ? (
+                        <img
+                          src={currentUser.imageUrl}
+                          alt={currentUser.name || "Usuário"}
+                          className="w-24 h-24 rounded-full object-cover border-2 border-emerald-700 mb-2"
+                        />
+                      ) : (
+                        <div className="bg-emerald-800/30 p-6 rounded-full">
+                          <User className="h-12 w-12 text-emerald-400" />
+                        </div>
+                      )}
+                      <p className="text-emerald-400 mt-2 text-sm">
+                        {hasVideoDevice
+                          ? "Inicializando vídeo..."
+                          : "Sem câmera disponível"}
+                      </p>
                     </div>
                   )}
                 </div>
@@ -326,7 +340,7 @@ const handleFileUpload = (files) => {
                 <div className="bg-emerald-900/10 px-3 py-2 text-emerald-400 text-sm font-medium">
                   Outro Participante
                 </div>
-                <div id="subscriber"     className="w-full aspect-video bg-muted/30">
+                <div id="subscriber" className="w-full aspect-video bg-muted/30">
                   {(!isConnected || !scriptLoaded) && (
                     <div className="flex items-center justify-center h-full">
                       <div className="bg-muted/20 rounded-full p-8">
@@ -338,18 +352,18 @@ const handleFileUpload = (files) => {
               </div>
             </div>
 
-            {/* Controles e Chat */}
+            {/* Controles */}
             <div className="flex justify-center space-x-4">
               <Button
                 variant="outline"
                 size="lg"
                 onClick={toggleVideo}
+                disabled={!publisherRef.current || !hasVideoDevice}
                 className={`rounded-full p-4 h-14 w-14 ${
                   isVideoEnabled
                     ? "border-emerald-900/30"
                     : "bg-red-900/20 border-red-900/30 text-red-400"
                 }`}
-                disabled={!publisherRef.current}
               >
                 {isVideoEnabled ? <Video /> : <VideoOff />}
               </Button>
@@ -358,27 +372,17 @@ const handleFileUpload = (files) => {
                 variant="outline"
                 size="lg"
                 onClick={toggleAudio}
+                disabled={!publisherRef.current || !hasAudioDevice}
                 className={`rounded-full p-4 h-14 w-14 ${
                   isAudioEnabled
                     ? "border-emerald-900/30"
                     : "bg-red-900/20 border-red-900/30 text-red-400"
                 }`}
-                disabled={!publisherRef.current}
               >
                 {isAudioEnabled ? <Mic /> : <MicOff />}
               </Button>
 
-              {/* Chat lateral */}
-              <Sheet open={isChatOpen}  onOpenChange={(open) => {
-    setIsChatOpen(open);
-
-    // Scroll para baixo quando abrir
-    if (open) {
-      setTimeout(() => {
-        messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-      }, 50); // timeout pequeno para esperar o conteúdo montar
-    }
-  }}>
+              <Sheet open={isChatOpen} onOpenChange={setIsChatOpen}>
                 <SheetTrigger asChild>
                   <Button
                     variant="outline"
@@ -389,209 +393,153 @@ const handleFileUpload = (files) => {
                   </Button>
                 </SheetTrigger>
 
-               <SheetContent
-  side="right"
-  className="w-96 flex flex-col h-full bg-gradient-to-b from-emerald-950 to-emerald-900 text-white"
->
-  <SheetHeader className="border-b border-emerald-800 pb-2">
-    <SheetTitle className="text-emerald-300 text-lg">Chat da Consulta</SheetTitle>
-    <SheetClose />
-  </SheetHeader>
+                {/* CHAT */}
+                <SheetContent
+                  side="right"
+                  className="w-96 flex flex-col h-full bg-gradient-to-b from-emerald-950 to-emerald-900 text-white"
+                >
+                  <SheetHeader className="border-b border-emerald-800 pb-2">
+                    <SheetTitle className="text-emerald-300 text-lg">
+                      Chat da Consulta
+                    </SheetTitle>
+                    <SheetClose />
+                  </SheetHeader>
 
-  {/* MENSAGENS */}
-  <div className="flex-1 overflow-y-auto p-4 space-y-3 scrollbar-thin scrollbar-thumb-emerald-800/40 scrollbar-track-transparent">
-    {messages.map((msg) => {
-      const isMe = currentUser && msg.senderId === currentUser.id;
+                  <div className="flex-1 overflow-y-auto p-4 space-y-3 scrollbar-thin scrollbar-thumb-emerald-800/40 scrollbar-track-transparent">
+                    {messages.map((msg) => {
+                      const isMe = currentUser && msg.senderId === currentUser.id;
 
-      return (
-        <div
-          key={msg.id}
-          className={`flex ${isMe ? "justify-end" : "justify-start"}`}
-        >
-          <div
-            className={`relative max-w-[75%] px-4 py-2 rounded-2xl text-sm shadow-md ${
-              isMe
-                ? "bg-emerald-600 text-white rounded-br-none"
-                : "bg-emerald-800/40 text-emerald-50 rounded-bl-none"
-            }`}
-          >
-            {/* Texto da mensagem */}
-            {msg.content && <p>{msg.content}</p>}
+                      return (
+                        <div
+                          key={msg.id}
+                          className={`flex ${isMe ? "justify-end" : "justify-start"}`}
+                        >
+                          <div
+                            className={`relative max-w-[75%] px-4 py-2 rounded-2xl text-sm shadow-md ${
+                              isMe
+                                ? "bg-emerald-600 text-white rounded-br-none"
+                                : "bg-emerald-800/40 text-emerald-50 rounded-bl-none"
+                            }`}
+                          >
+                            {msg.content && <p>{msg.content}</p>}
 
-            {/* Arquivos enviados */}
-            {msg.files && msg.files.length > 0 && (
-              <div className="mt-2 flex flex-wrap gap-2">
-                {msg.files.map((file) => {
-                  if (file.mimetype.startsWith("image/")) {
-                    return (
-                      <Image
-                        key={file.id}
-                        src={file.url}
-                        alt={file.filename}
-                        width={120}
-                        height={120}
-                        className="object-cover rounded-md border border-emerald-800"
+                            {msg.files && msg.files.length > 0 && (
+                              <div className="mt-2 flex flex-wrap gap-2">
+                                {msg.files.map((file) => {
+                                  if (file.mimetype.startsWith("image/")) {
+                                    return (
+                                      <Image
+                                        key={file.id}
+                                        src={file.url}
+                                        alt={file.filename}
+                                        width={120}
+                                        height={120}
+                                        className="object-cover rounded-md border border-emerald-800"
+                                      />
+                                    );
+                                  } else if (file.mimetype.startsWith("video/")) {
+                                    return (
+                                      <video
+                                        key={file.id}
+                                        src={file.url}
+                                        controls
+                                        className="w-48 rounded-md border border-emerald-800"
+                                      />
+                                    );
+                                  } else {
+                                    return (
+                                      <a
+                                        key={file.id}
+                                        href={`${file.url}?fl_attachment`}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="inline-block px-2 py-1 text-xs text-emerald-100 bg-emerald-800/40 rounded-md border border-emerald-700"
+                                      >
+                                        {file.filename}
+                                      </a>
+                                    );
+                                  }
+                                })}
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      );
+                    })}
+                    <div ref={messagesEndRef} />
+                  </div>
+
+                  <div className="p-3 border-t border-emerald-800 bg-emerald-950/60 flex flex-col space-y-2">
+                    <div className="flex flex-wrap gap-2 mb-2">
+                      {newMessageFiles.map((file, index) => (
+                        <div key={index} className="relative w-16 h-16">
+                          <img
+                            src={previews[index]}
+                            alt={file.name}
+                            className="h-16 w-16 object-cover rounded-md border border-emerald-800"
+                          />
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setNewMessageFiles((prev) =>
+                                prev.filter((_, i) => i !== index)
+                              );
+                              setPreviews((prev) =>
+                                prev.filter((_, i) => i !== index)
+                              );
+                            }}
+                            className="absolute -top-2 -right-2 bg-red-600 hover:bg-red-700 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs"
+                          >
+                            ×
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+
+                    <div className="flex space-x-2 items-center">
+                      <input
+                        type="text"
+                        placeholder="Digite uma mensagem..."
+                        className="flex-1 bg-emerald-900/40 border border-emerald-800 rounded-full px-4 py-2 text-sm text-white placeholder-emerald-400 focus:outline-none focus:ring-1 focus:ring-emerald-600 h-10"
+                        value={newMessage}
+                        onChange={(e) => setNewMessage(e.target.value)}
+                        onKeyDown={(e) => e.key === "Enter" && handleSendMessage()}
                       />
-                    );
-                  } else if (file.mimetype.startsWith("video/")) {
-                    return (
-                      <video
-                        key={file.id}
-                        src={file.url}
-                        controls
-                        className="w-48 rounded-md border border-emerald-800"
+
+                      <input
+                        type="file"
+                        id="fileInput"
+                        className="hidden"
+                        multiple
+                        onChange={(e) => handleFileUpload(e.target.files)}
                       />
-                    );
-                  } else {
-                    return (
-                     <a
-  key={file.id}
-  href={`${file.url}?fl_attachment`} // adiciona attachment sempre
-  target="_blank"
-  rel="noopener noreferrer"
-  className="inline-block px-2 py-1 text-xs text-emerald-100 bg-emerald-800/40 rounded-md border border-emerald-700"
->
-  {file.filename}
-</a>
-                    );
-                  }
-                })}
-              </div>
-            )}
-          </div>
-        </div>
-      );
-    })}
-    <div ref={messagesEndRef} />
-  </div>
+                      <label
+                        htmlFor="fileInput"
+                        className="cursor-pointer bg-emerald-600 hover:bg-emerald-700 text-white rounded-full p-2 h-10 w-10 flex items-center justify-center transition-all"
+                      >
+                        <Paperclip size={18} />
+                      </label>
 
-  {/* INPUT E PREVIEW */}
-  <div className="p-3 border-t border-emerald-800 bg-emerald-950/60 flex flex-col space-y-2">
-    {/* PRÉ-VISUALIZAÇÃO DE ARQUIVOS */}
-    <div className="flex flex-wrap gap-2 mb-2">
-      {newMessageFiles.map((file, index) => {
-        if (file.type.startsWith("image/")) {
-          return (
-            <div key={index} className="relative w-16 h-16">
-              <img
-                src={previews[index]}
-                alt={file.name}
-                className="h-16 w-16 object-cover rounded-md border border-emerald-800"
-              />
-              <button
-                type="button"
-                onClick={() => {
-                  setNewMessageFiles((prev) => prev.filter((_, i) => i !== index));
-                  setPreviews((prev) => prev.filter((_, i) => i !== index));
-                }}
-                className="absolute -top-2 -right-2 bg-red-600 hover:bg-red-700 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs"
-              >
-                ×
-              </button>
-            </div>
-          );
-        } else if (file.type.startsWith("video/")) {
-          return (
-            <div key={index} className="relative w-20 h-20">
-              <video
-                src={URL.createObjectURL(file)}
-                className="rounded-md border border-emerald-800 object-cover w-20 h-20"
-                muted
-                controls
-              />
-              <button
-                type="button"
-                onClick={() => {
-                  setNewMessageFiles((prev) => prev.filter((_, i) => i !== index));
-                  setPreviews((prev) => prev.filter((_, i) => i !== index));
-                }}
-                className="absolute -top-2 -right-2 bg-red-600 hover:bg-red-700 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs"
-              >
-                ×
-              </button>
-            </div>
-          );
-        } else {
-          return (
-            <div
-              key={index}
-              className="relative flex items-center justify-center h-16 w-16 bg-emerald-800/40 text-white rounded-md border border-emerald-800 p-2 text-xs"
-            >
-              <span className="truncate">{file.name}</span>
-              <button
-                type="button"
-                onClick={() => {
-                  setNewMessageFiles((prev) => prev.filter((_, i) => i !== index));
-                  setPreviews((prev) => prev.filter((_, i) => i !== index));
-                }}
-                className="absolute -top-2 -right-2 bg-red-600 hover:bg-red-700 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs"
-              >
-                ×
-              </button>
-            </div>
-          );
-        }
-      })}
-    </div>
-
-    {/* Campo de digitar mensagem + botões */}
-    <div className="flex space-x-2 items-center">
-      <input
-        type="text"
-        placeholder="Digite uma mensagem..."
-        className="flex-1 bg-emerald-900/40 border border-emerald-800 rounded-full px-4 py-2 text-sm text-white placeholder-emerald-400 focus:outline-none focus:ring-1 focus:ring-emerald-600 h-10"
-        value={newMessage}
-        onChange={(e) => setNewMessage(e.target.value)}
-        onKeyDown={(e) => e.key === "Enter" && handleSendMessage()}
-      />
-
-      <input
-        type="file"
-        id="fileInput"
-        className="hidden"
-        multiple
-        onChange={(e) => handleFileUpload(e.target.files)}
-      />
-      <label
-        htmlFor="fileInput"
-        className="cursor-pointer bg-emerald-600 hover:bg-emerald-700 text-white rounded-full p-2 h-10 w-10 flex items-center justify-center"
-      >
-        <Paperclip className="h-5 w-5" />
-      </label>
-
-      <Button
-        size="sm"
-        onClick={handleSendMessage}
-        disabled={!newMessage.trim() && newMessageFiles.length === 0}
-        className="bg-emerald-600 hover:bg-emerald-700 text-white rounded-full px-4 h-10 flex items-center justify-center"
-      >
-        Enviar
-      </Button>
-    </div>
-  </div>
-</SheetContent>
-
-
+                      <Button
+                        onClick={handleSendMessage}
+                        size="sm"
+                        className="bg-emerald-600 hover:bg-emerald-700 rounded-full h-10 px-4"
+                      >
+                        Enviar
+                      </Button>
+                    </div>
+                  </div>
+                </SheetContent>
               </Sheet>
 
               <Button
                 variant="destructive"
                 size="lg"
                 onClick={endCall}
-                className="rounded-full p-4 h-14 w-14 bg-red-600 hover:bg-red-700"
+                className="rounded-full p-4 h-14 w-14"
               >
                 <PhoneOff />
               </Button>
-            </div>
-
-            <div className="text-center">
-              <p className="text-muted-foreground text-sm">
-                {isVideoEnabled ? "Câmera ligada" : "Câmera desligada"} •
-                {isAudioEnabled ? " Microfone ligado" : " Microfone desligado"}
-              </p>
-              <p className="text-muted-foreground text-sm mt-1">
-                Quando terminar sua consulta, clique no botão vermelho para encerrar a chamada
-              </p>
             </div>
           </div>
         )}
