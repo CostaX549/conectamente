@@ -172,9 +172,10 @@ export async function generateVideoToken(formData) {
     const appointmentTime = new Date(appointment.startTime);
     const timeDifference = (appointmentTime - now) / (1000 * 60);
 
-    if (timeDifference > 30) {
-      throw new Error("The call will be available 30 minutes before the scheduled time");
-    }
+    // if (timeDifference > 30) {
+//   throw new Error("The call will be available 30 minutes before the scheduled time");
+// }
+
 
     const appointmentEndTime = new Date(appointment.endTime);
     const expirationTime = Math.floor(appointmentEndTime.getTime() / 1000) + 60 * 60;
