@@ -168,9 +168,11 @@ export default function VideoCall({ sessionId, token, chatId }) {
   const checkDevices = async () => {
     try {
       const devices = await navigator.mediaDevices.enumerateDevices();
-      setHasVideoDevice(devices.some((d) => d.kind === "videoinput"));
-      setHasAudioDevice(devices.some((d) => d.kind === "audioinput"));
-      console.log(hasAudioDevice);
+        const hasVideo = devices.some((d) => d.kind === "videoinput");
+    const hasAudio = devices.some((d) => d.kind === "audioinput");
+    setHasVideoDevice(hasVideo);
+    setHasAudioDevice(hasAudio);
+    console.log("Dispositivos:", { hasVideo, hasAudio });
     } catch (err) {
       console.warn("Erro ao verificar dispositivos:", err);
       toast.error("Não foi possível verificar dispositivos de áudio/vídeo");
@@ -213,10 +215,9 @@ export default function VideoCall({ sessionId, token, chatId }) {
         setIsConnected(true);
         setIsLoading(false);
 
-        if (!hasVideoDevice && !hasAudioDevice) {
-          toast.info("Nenhum dispositivo de áudio/vídeo detectado.");
-          return;
-        }
+       if (!hasVideoDevice && !hasAudioDevice) {
+  toast.info("Nenhum dispositivo de áudio/vídeo detectado. Você entrará sem transmitir áudio ou vídeo.");
+}
 
         publisherRef.current = window.OT.initPublisher(
           "publisher",
@@ -294,7 +295,7 @@ export default function VideoCall({ sessionId, token, chatId }) {
           </p>
         </div>
 
-        {isLoading && !scriptLoaded ? (
+        {isLoading || !scriptLoaded ? (
           <div className="flex flex-col items-center justify-center py-12">
             <Loader2 className="h-12 w-12 text-emerald-400 animate-spin mb-4" />
             <p className="text-white text-lg">
@@ -304,17 +305,40 @@ export default function VideoCall({ sessionId, token, chatId }) {
         ) : (
           <div className="space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {/* Publisher */}
-              <div className="border border-emerald-900/20 rounded-lg overflow-hidden">
-                <div className="bg-emerald-900/10 px-3 py-2 text-emerald-400 text-sm font-medium">
-                  Você
-                </div>
-               <div
-  id="publisher"
-  className="w-full aspect-video bg-muted/30 relative flex items-center justify-center"
->
-  {(!scriptLoaded || !isConnected || (!hasVideoDevice && !hasAudioDevice)) && (
-    <div className="absolute inset-0 flex flex-col items-center justify-center text-center p-6 bg-emerald-950/20 backdrop-blur-sm">
+            {/* Publisher */}
+<div className="border border-emerald-900/20 rounded-lg overflow-hidden">
+  <div className="bg-emerald-900/10 px-3 py-2 text-emerald-400 text-sm font-medium">
+    Você
+  </div>
+
+  {/* Se tiver pelo menos um dispositivo, mostra o vídeo */}
+  {(hasVideoDevice || hasAudioDevice) ? (
+    <div
+      id="publisher"
+      className="w-full aspect-video bg-muted/30 relative flex items-center justify-center"
+    >
+      {(!scriptLoaded || !isConnected) && (
+        <div className="absolute inset-0 flex flex-col items-center justify-center text-center p-6 bg-emerald-950/20 backdrop-blur-sm">
+          {currentUser?.imageUrl ? (
+            <img
+              src={currentUser.imageUrl}
+              alt={currentUser.name || "Usuário"}
+              className="w-24 h-24 rounded-full object-cover border-2 border-emerald-700 mb-2"
+            />
+          ) : (
+            <div className="bg-emerald-800/30 p-6 rounded-full">
+              <User className="h-12 w-12 text-emerald-400" />
+            </div>
+          )}
+          <p className="text-emerald-400 mt-2 text-sm">
+            Inicializando chamada...
+          </p>
+        </div>
+      )}
+    </div>
+  ) : (
+    // Caso não tenha câmera nem microfone
+    <div className="w-full aspect-video bg-emerald-950/30 flex flex-col items-center justify-center text-center p-6 backdrop-blur-sm">
       {currentUser?.imageUrl ? (
         <img
           src={currentUser.imageUrl}
@@ -326,21 +350,13 @@ export default function VideoCall({ sessionId, token, chatId }) {
           <User className="h-12 w-12 text-emerald-400" />
         </div>
       )}
-
       <p className="text-emerald-400 mt-2 text-sm">
-        {!hasVideoDevice && hasAudioDevice
-          ? "Transmitindo apenas áudio"
-          : hasVideoDevice && !hasAudioDevice
-          ? "Transmitindo apenas vídeo"
-          : !hasVideoDevice && !hasAudioDevice
-          ? "Sem câmera nem microfone disponíveis"
-          : "Inicializando chamada..."}
+        Nenhum dispositivo de câmera ou microfone detectado.
       </p>
     </div>
   )}
 </div>
 
-              </div>
 
               {/* Subscriber */}
               <div className="border border-emerald-900/20 rounded-lg overflow-hidden">
