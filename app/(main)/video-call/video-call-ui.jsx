@@ -251,9 +251,10 @@ const checkDevices = async () => {
             insertMode: "replace",
             width: "100%",
             height: "100%",
-              publishAudio: audioAvailable && isAudioEnabled,
-        publishVideo: false,
-       videoSource: null, 
+              publishAudio: isAudioEnabled,
+        publishVideo: isVideoEnabled,
+       videoSource: videoAvailable ? undefined : null, 
+    audioSource: audioAvailable ? undefined : null, 
           },
           (error) => error && toast.error("Erro ao inicializar câmera/microfone")
         );
