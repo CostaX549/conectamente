@@ -249,6 +249,12 @@ const handleFileUpload = (files) => {
       sessionRef.current.on("sessionConnected", () => {
         setIsConnected(true);
         setIsLoading(false);
+         if (!videoAvailable && !audioAvailable) {
+          toast.info(
+            "Nenhum dispositivo de áudio/vídeo detectado. Você entrará sem transmitir áudio ou vídeo."
+          );
+          return;
+        }
         publisherRef.current = window.OT.initPublisher(
           "publisher",
           {
