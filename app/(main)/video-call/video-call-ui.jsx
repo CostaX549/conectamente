@@ -339,48 +339,13 @@ const checkDevices = async () => {
     Você
   </div>
 
-  {/* Se tiver pelo menos um dispositivo, mostra o vídeo */}
-  {(devices.hasVideo || devices.hasAudio) ? (
-    <div
-      id="publisher"
-      className="w-full aspect-video bg-muted/30 relative flex items-center justify-center"
-    >
-     
-        <div className="absolute inset-0 flex flex-col items-center justify-center text-center p-6 bg-emerald-950/20 backdrop-blur-sm">
-          {currentUser?.imageUrl ? (
-            <img
-              src={currentUser.imageUrl}
-              alt={currentUser.name || "Usuário"}
-              className="w-24 h-24 rounded-full object-cover border-2 border-emerald-700 mb-2"
-            />
-          ) : (
-            <div className="bg-emerald-800/30 p-6 rounded-full">
-              <User className="h-12 w-12 text-emerald-400" />
-            </div>
-          )}
-        
-        </div>
-  
-    </div>
-  ) : (
-    // Caso não tenha câmera nem microfone
-    <div className="w-full aspect-video bg-emerald-950/30 flex flex-col items-center justify-center text-center p-6 backdrop-blur-sm">
-      {currentUser?.imageUrl ? (
-        <img
-          src={currentUser.imageUrl}
-          alt={currentUser.name || "Usuário"}
-          className="w-24 h-24 rounded-full object-cover border-2 border-emerald-700 mb-2"
-        />
-      ) : (
-        <div className="bg-emerald-800/30 p-6 rounded-full">
-          <User className="h-12 w-12 text-emerald-400" />
-        </div>
-      )}
-      <p className="text-emerald-400 mt-2 text-sm">
-        Nenhum dispositivo de câmera ou microfone detectado.
-      </p>
-    </div>
-  )}
+  <div
+  id="publisher"
+  className="w-full aspect-video bg-muted/30 border border-emerald-900/20 rounded-lg overflow-hidden"
+>
+ 
+</div>
+
 </div>
 
 
