@@ -165,19 +165,50 @@ export default function VideoCall({ sessionId, token, chatId }) {
   };
 
   // 🔹 Verificar dispositivos
-  const checkDevices = async () => {
-    try {
-      const devices = await navigator.mediaDevices.enumerateDevices();
-        const hasVideo = devices.some((d) => d.kind === "videoinput");
+const checkDevices = async () => {
+  try {
+    const devices = await navigator.mediaDevices.enumerateDevices();
+    const hasVideo = devices.some((d) => d.kind === "videoinput");
     const hasAudio = devices.some((d) => d.kind === "audioinput");
-    setHasVideoDevice(hasVideo);
-    setHasAudioDevice(hasAudio);
-    console.log("Dispositivos:", { hasVideo, hasAudio });
-    } catch (err) {
-      console.warn("Erro ao verificar dispositivos:", err);
-      toast.error("Não foi possível verificar dispositivos de áudio/vídeo");
+
+    let videoAvailable = false;
+    let audioAvailable = false;
+
+    // Testa se consegue acessar câmera
+    if (hasVideo) {
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+        videoAvailable = true;
+        stream.getTracks().forEach((t) => t.stop()); // libera a câmera
+      } catch {
+        videoAvailable = false;
+      }
     }
-  };
+
+    // Testa se consegue acessar microfone
+    if (hasAudio) {
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        audioAvailable = true;
+        stream.getTracks().forEach((t) => t.stop()); // libera o microfone
+      } catch {
+        audioAvailable = false;
+      }
+    }
+
+    setHasVideoDevice(videoAvailable);
+    setHasAudioDevice(audioAvailable);
+
+    console.log("Dispositivos realmente disponíveis:", { videoAvailable, audioAvailable });
+
+    if (!videoAvailable && !audioAvailable) {
+      toast.info("Nenhum dispositivo de áudio ou vídeo disponível.");
+    }
+  } catch (err) {
+    console.warn("Erro ao verificar dispositivos:", err);
+    toast.error("Não foi possível verificar dispositivos de áudio/vídeo");
+  }
+};
 
   // 🔹 Carregar script do Vonage
   const handleScriptLoad = async () => {
