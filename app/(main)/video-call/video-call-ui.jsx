@@ -37,8 +37,10 @@ export default function VideoCall({ sessionId, token, chatId }) {
   const [isAudioEnabled, setIsAudioEnabled] = useState(true);
   const [isChatOpen, setIsChatOpen] = useState(false);
 
-  const [hasVideoDevice, setHasVideoDevice] = useState(false);
-  const [hasAudioDevice, setHasAudioDevice] = useState(false);
+const [devices, setDevices] = useState({
+  hasVideo: false,
+  hasAudio: false,
+});
 
   const [currentUser, setCurrentUser] = useState(null);
   const [messages, setMessages] = useState([]);
@@ -167,48 +169,38 @@ export default function VideoCall({ sessionId, token, chatId }) {
   // 🔹 Verificar dispositivos
 const checkDevices = async () => {
   try {
-    const devices = await navigator.mediaDevices.enumerateDevices();
-    const hasVideo = devices.some((d) => d.kind === "videoinput");
-    const hasAudio = devices.some((d) => d.kind === "audioinput");
+    const devicesList = await navigator.mediaDevices.enumerateDevices();
+    const hasVideo = devicesList.some((d) => d.kind === "videoinput");
+    const hasAudio = devicesList.some((d) => d.kind === "audioinput");
 
     let videoAvailable = false;
     let audioAvailable = false;
 
-    // Testa se consegue acessar câmera
     if (hasVideo) {
       try {
         const stream = await navigator.mediaDevices.getUserMedia({ video: true });
         videoAvailable = true;
-        stream.getTracks().forEach((t) => t.stop()); // libera a câmera
-      } catch {
-        videoAvailable = false;
-      }
+        stream.getTracks().forEach((t) => t.stop());
+      } catch {}
     }
 
-    // Testa se consegue acessar microfone
     if (hasAudio) {
       try {
         const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
         audioAvailable = true;
-        stream.getTracks().forEach((t) => t.stop()); // libera o microfone
-      } catch {
-        audioAvailable = false;
-      }
+        stream.getTracks().forEach((t) => t.stop());
+      } catch {}
     }
 
-    setHasVideoDevice(videoAvailable);
-    setHasAudioDevice(audioAvailable);
-
-    console.log("Dispositivos realmente disponíveis:", { videoAvailable, audioAvailable });
-   console.log(hasAudioDevice);
-    if (!videoAvailable && !audioAvailable) {
-      toast.info("Nenhum dispositivo de áudio ou vídeo disponível.");
-    }
+    setDevices({ hasVideo: videoAvailable, hasAudio: audioAvailable });
+    return { videoAvailable, audioAvailable }; // ✅ retorna os valores reais
   } catch (err) {
-    console.warn("Erro ao verificar dispositivos:", err);
-    toast.error("Não foi possível verificar dispositivos de áudio/vídeo");
+    console.warn(err);
+    setDevices({ hasVideo: false, hasAudio: false });
+    return { videoAvailable: false, audioAvailable: false };
   }
 };
+
 
   // 🔹 Carregar script do Vonage
   const handleScriptLoad = async () => {
@@ -218,12 +210,12 @@ const checkDevices = async () => {
       setIsLoading(false);
       return;
     }
-    await checkDevices();
-    initializeSession();
+    const { videoAvailable, audioAvailable } = await checkDevices();
+  initializeSession(videoAvailable, audioAvailable);
   };
 
   // 🔹 Inicializar sessão
-  const initializeSession = () => {
+  const initializeSession = (videoAvailable, audioAvailable) => {
     if (!appId || !sessionId || !token) {
       toast.error("Parâmetros obrigatórios ausentes");
       router.push("/appointments");
@@ -246,12 +238,11 @@ const checkDevices = async () => {
         setIsConnected(true);
         setIsLoading(false);
 
-      if (!hasVideoDevice && !hasAudioDevice) {
-    toast.info(
-      "Nenhum dispositivo de áudio/vídeo detectado. Você entrará sem transmitir áudio ou vídeo."
-    );
-    return; // Não inicializa o publisher
-  }
+   if (!videoAvailable && !audioAvailable) {
+  toast.info("Nenhum dispositivo de áudio/vídeo detectado. Você entrará sem transmitir áudio ou vídeo.");
+  return;
+}
+
 
 
         publisherRef.current = window.OT.initPublisher(
@@ -260,8 +251,8 @@ const checkDevices = async () => {
             insertMode: "replace",
             width: "100%",
             height: "100%",
-            publishAudio: hasAudioDevice && isAudioEnabled,
-            publishVideo: hasVideoDevice && isVideoEnabled,
+             publishAudio: audioAvailable && isAudioEnabled,
+      publishVideo: videoAvailable && isVideoEnabled,
           },
           (error) => error && toast.error("Erro ao inicializar câmera/microfone")
         );
@@ -347,7 +338,7 @@ const checkDevices = async () => {
   </div>
 
   {/* Se tiver pelo menos um dispositivo, mostra o vídeo */}
-  {(hasVideoDevice || hasAudioDevice) ? (
+  {(devices.hasVideo || devices.hasAudio) ? (
     <div
       id="publisher"
       className="w-full aspect-video bg-muted/30 relative flex items-center justify-center"
@@ -416,7 +407,7 @@ const checkDevices = async () => {
                 variant="outline"
                 size="lg"
                 onClick={toggleVideo}
-                disabled={!publisherRef.current || !hasVideoDevice}
+                disabled={!publisherRef.current || !devices.hasVideo}
                 className={`rounded-full p-4 h-14 w-14 ${
                   isVideoEnabled
                     ? "border-emerald-900/30"
@@ -430,7 +421,7 @@ const checkDevices = async () => {
                 variant="outline"
                 size="lg"
                 onClick={toggleAudio}
-                disabled={!publisherRef.current || !hasAudioDevice}
+                disabled={!publisherRef.current || !devices.hasAudio}
                 className={`rounded-full p-4 h-14 w-14 ${
                   isAudioEnabled
                     ? "border-emerald-900/30"
