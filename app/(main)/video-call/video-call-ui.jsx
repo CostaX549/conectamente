@@ -243,9 +243,9 @@ export default function VideoCall({ sessionId, token, chatId }) {
         publisherRef.current = window.OT.initPublisher(
           "publisher",
           {
-            insertMode: "replace",
-            width: "100%",
-            height: "100%",
+            insertMode: "append",
+    width: "100%",
+    height: "100%",
             publishAudio: isAudioEnabled,
             publishVideo: isVideoEnabled,
             videoSource: videoAvailable ? undefined : null,
